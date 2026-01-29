@@ -268,12 +268,10 @@ export default function AdminMateriaDetailPage() {
         setError(null);
 
         try {
-          // First, delete all professor assignments for this comision
           for (const asig of assignedProfs) {
             await profesorXComisionAPI.delete(asig.id.toString());
           }
 
-          // Then delete the comision
           await comisionAPI.delete(comisionId.toString());
           setComisiones(comisiones.filter((c) => c.id !== comisionId));
           const newAsignados = { ...profesoresAsignados };
@@ -426,22 +424,7 @@ export default function AdminMateriaDetailPage() {
               Año {materia.ano_carrera}
             </p>
           </div>
-          {!editing && (
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setEditing(true)}>
-                <Pencil className="h-4 w-4 mr-2" />
-                Editar
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={deleting}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                {deleting ? "Eliminando..." : "Eliminar"}
-              </Button>
-            </div>
-          )}
+    
         </div>
 
         {error && (
@@ -450,7 +433,6 @@ export default function AdminMateriaDetailPage() {
           </div>
         )}
 
-        {/* Materia Info Card */}
         <Card>
           <CardHeader>
             <CardTitle>Informacion de la Materia</CardTitle>

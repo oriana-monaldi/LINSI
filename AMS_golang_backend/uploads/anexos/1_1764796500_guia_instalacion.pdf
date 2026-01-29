@@ -1,0 +1,91 @@
+# Guía de Instalación - Entorno de Desarrollo
+
+## Requisitos del Sistema
+
+### Software Necesario:
+- Sistema Operativo: Windows 10/11, macOS 10.15+, o Linux Ubuntu 18.04+
+- IDE: Visual Studio Code, IntelliJ IDEA, o similar
+- Git: Versión 2.30 o superior
+- Node.js: Versión 14.0 o superior (si aplica)
+- Python: Versión 3.8 o superior (si aplica)
+
+### Instalación de Herramientas
+
+#### 1. Instalación de Git
+```bash
+# Windows
+winget install --id Git.Git -e --source winget
+
+# macOS
+brew install git
+
+# Ubuntu/Debian
+sudo apt-get install git
+```
+
+#### 2. Configuración Inicial
+```bash
+git config --global user.name "Tu Nombre"
+git config --global user.email "tu@email.com"
+```
+
+#### 3. Clonación del Repositorio
+```bash
+git clone https://github.com/usuario/proyecto.git
+cd proyecto
+```
+
+### Configuración del Entorno
+
+#### Variables de Entorno
+Crear archivo `.env`:
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/dbname
+API_KEY=tu_api_key_aqui
+DEBUG=true
+```
+
+#### Instalación de Dependencias
+```bash
+# Si es un proyecto Node.js
+npm install
+
+# Si es un proyecto Python
+pip install -r requirements.txt
+```
+
+### Verificación de la Instalación
+
+1. Ejecutar tests:
+   ```bash
+   npm test
+   # o
+   python -m pytest
+   ```
+
+2. Iniciar servidor de desarrollo:
+   ```bash
+   npm run dev
+   # o
+   python manage.py runserver
+   ```
+
+### Solución de Problemas Comunes
+
+#### Error: "Command not found"
+- Verificar que las herramientas estén en el PATH
+- Reiniciar terminal después de la instalación
+
+#### Error de Permisos
+```bash
+# Linux/macOS
+sudo chmod +x script.sh
+
+# Windows
+# Ejecutar PowerShell como administrador
+```
+
+### Recursos Adicionales
+- Documentación oficial: https://docs.proyecto.com
+- FAQ: https://faq.proyecto.com
+- Soporte: soporte@proyecto.com

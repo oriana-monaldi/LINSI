@@ -1,0 +1,62 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DB_DSN: "host=db user=linsiuser password=linsipass dbname=linsitrack port=5432 sslmode=disable TimeZone=America/Argentina/Buenos_Aires"
+      SECRET_KEY: "HEUqp6lLp9Zc/1voBOAgHYjUXPrqpYK8y0vvoEzY5pY="
+      PORT: "8080"
+      CGO_ENABLED: "0"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - linsitrack-network
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: linsiuser
+      POSTGRES_PASSWORD: linsipass
+      POSTGRES_DB: linsitrack
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U linsiuser -d linsitrack"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - linsitrack-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@linsitrack.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - linsitrack-network
+
+volumes:
+  db_data:
+  pgadmin_data:
+
+networks:
+  linsitrack-network:
+    driver: bridge

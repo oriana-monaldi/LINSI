@@ -1,0 +1,46 @@
+# Archivos de Git
+.git
+.gitignore
+
+# Archivos de Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Archivos temporales y builds
+tmp/
+*.tmp
+*.log
+build-errors.log
+
+# Archivos de configuración del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de Node.js (si los hay)
+node_modules/
+npm-debug.log
+
+# Archivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Variables de entorno (se copian explícitamente si se necesitan)
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Archivos de testing
+testdata/
+*_test.go
+coverage.out
+
+# Archivos de documentación
+README.md
+docs/
+
+# Archivos de uploads (se manejan con volúmenes)
+uploads/

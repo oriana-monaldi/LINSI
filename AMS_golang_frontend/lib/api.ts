@@ -20,7 +20,7 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
-// TPs (Trabajos Prácticos)
+// Trabajos Prácticos
 export const tpAPI = {
   getAll: () => fetchAPI("/tps/"),
   getMine: () => fetchAPI("/profesor/tps"),
@@ -66,7 +66,7 @@ export const evaluacionAPI = {
   delete: (id: string) => fetchAPI(`/evaluaciones/${id}`, { method: "DELETE" }),
 };
 
-// Entregas TP (TP Student)
+// Entregas TP
 export const entregaTPAPI = {
   getAll: () => fetchAPI("/entregas/"),
   getByTP: (tpId: string) => fetchAPI(`/entregas/tp/${tpId}`),
@@ -93,7 +93,7 @@ export const entregaTPAPI = {
   delete: (id: string) => fetchAPI(`/entregas/${id}`, { method: "DELETE" }),
 };
 
-// Entregas (Student Submissions - Old system)
+// Entregas
 export const entregaAPI = {
   getAll: () => fetchAPI("/entregas/"),
   getMine: () => fetchAPI("/mis-entregas/"),
@@ -149,7 +149,7 @@ export const comisionAPI = {
   delete: (id: string) => fetchAPI(`/comisiones/${id}`, { method: "DELETE" }),
 };
 
-// ProfesorXComision (Teacher assignments to Comisiones)
+// ProfesorXComision 
 export const profesorXComisionAPI = {
   getAll: () => fetchAPI("/profesor-comision/"),
   getById: (id: string) => fetchAPI(`/profesor-comision/${id}`),
@@ -182,7 +182,7 @@ export const profesorXComisionAPI = {
     fetchAPI(`/profesor-comision/${id}`, { method: "DELETE" }),
 };
 
-// Cursadas (Student enrollments)
+// Cursadas
 export const cursadaAPI = {
   getAll: () => fetchAPI("/cursadas"),
   getById: (id: string) => fetchAPI(`/cursadas/${id}`),
@@ -226,7 +226,7 @@ export const materiaAPI = {
   delete: (id: string) => fetchAPI(`/materias/${id}`, { method: "DELETE" }),
 };
 
-// Alumnos (Students)
+// Alumnos
 export const alumnoAPI = {
   getAll: () => fetchAPI("/alumnos/"),
   getById: (id: string) => fetchAPI(`/alumnos/${id}`),
@@ -258,7 +258,7 @@ export const alumnoAPI = {
   delete: (id: string) => fetchAPI(`/alumnos/${id}`, { method: "DELETE" }),
 };
 
-// Profesores (Teachers)
+// Profesores
 export const profesorAPI = {
   getAll: () => fetchAPI("/profesores/"),
   getById: (id: string) => fetchAPI(`/profesores/${id}`),

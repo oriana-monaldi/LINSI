@@ -195,7 +195,6 @@ export default function GradeEntregaPage() {
                           <p className="text-xs text-muted-foreground">{entrega.archivo_url}</p>
                         </div>
                       </div>
-                      {/* Ensure file link points to backend host (not frontend) */}
                       <a href={(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080') + entrega.archivo_url} target="_blank" rel="noopener noreferrer">
                         <Button size="sm" variant="outline">
                           <ExternalLink className="h-4 w-4 mr-2" />

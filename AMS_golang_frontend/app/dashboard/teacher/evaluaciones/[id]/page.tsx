@@ -136,13 +136,11 @@ export default function EvaluacionDetailPage() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Calificar Evaluación</h1>
-            <p className="text-muted-foreground">Evaluación #{evaluacion.id}</p>
           </div>
           {isGraded && <Badge className="bg-green-500">Calificado</Badge>}
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Evaluation Info */}
           <Card>
             <CardHeader>
               <CardTitle>Información de la Evaluación</CardTitle>
@@ -189,7 +187,6 @@ export default function EvaluacionDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Grading Form */}
           <Card>
             <CardHeader>
               <CardTitle>Calificación</CardTitle>

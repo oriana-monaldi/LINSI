@@ -95,7 +95,6 @@ export default function TPDetailPage() {
             </Button>
           </Link>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">TP #{tpId}</h1>
             <p className="text-muted-foreground">
               {tp?.comision?.nombre || `Comisión ${tp?.comision_id}`}
             </p>
@@ -107,7 +106,6 @@ export default function TPDetailPage() {
           )}
         </div>
 
-        {/* TP Information */}
         {loading ? (
           <Card>
             <CardContent className="flex items-center justify-center py-12">

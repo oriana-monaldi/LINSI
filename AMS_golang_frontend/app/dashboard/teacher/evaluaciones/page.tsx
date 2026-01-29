@@ -86,7 +86,6 @@ export default function TeacherEvaluacionesPage() {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-lg">Evaluación #{ev.id}</CardTitle>
                         <CardDescription>
                           {ev.comision?.nombre || `Comisión ${ev.comision_id}`}
                         </CardDescription>
@@ -136,7 +135,6 @@ export default function TeacherEvaluacionesPage() {
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-lg">Evaluación #{ev.id}</CardTitle>
                         <CardDescription>
                           {ev.comision?.nombre || `Comisión ${ev.comision_id}`} - {format(new Date(ev.fecha_evaluacion), "dd/MM/yyyy")}
                         </CardDescription>

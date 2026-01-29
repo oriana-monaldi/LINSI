@@ -207,7 +207,6 @@ export default function GradeEntregaPage() {
               </CardContent>
             </Card>
 
-            {/* Grading Form */}
             <Card>
               <CardHeader>
                 <CardTitle>Calificación</CardTitle>

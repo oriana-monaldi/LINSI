@@ -1,4 +1,3 @@
-// Mock data for demonstration
 import type {
   Alumno,
   Profesor,

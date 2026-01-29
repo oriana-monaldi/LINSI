@@ -39,7 +39,6 @@ export default function CrearTPPage() {
         .then(response => {
           console.log('Comisiones response:', response)
           const profesorComisiones = response.data || response || []
-          // Extract comisiones from profesor-comision response
           const comisionesList = Array.isArray(profesorComisiones)
             ? profesorComisiones.map((pc: any) => pc.comision).filter(Boolean)
             : []
@@ -65,7 +64,6 @@ export default function CrearTPPage() {
     setLoading(true)
 
     try {
-      // Convert date to ISO format for backend
       const fechaISO = new Date(fechaEntrega).toISOString()
 
       await tpAPI.create({

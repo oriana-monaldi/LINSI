@@ -64,8 +64,6 @@ export default function TeacherTrabajosPage() {
     );
   }
 
-  // Note: Backend TPs don't have a 'nota' field - they represent assignments, not submissions
-  // For now, treat all TPs as pending (assignments waiting for submissions)
   const pendingTPs = tps;
   const gradedTPs: any[] = [];
 
@@ -76,8 +74,7 @@ export default function TeacherTrabajosPage() {
       tp.titulo ||
       tp.nombre ||
       (firstLine ? firstLine.slice(0, 80) : `TP #${tp.id}`);
-    // If the title came from the first line of the consigna, avoid repeating it below;
-    // show the remaining lines (joined) or nothing if no more content.
+  
     const consignaPreview =
       consignaStr && tpTitle === firstLine.slice(0, 80)
         ? consignaStr.split("\n").slice(1).join(" ").trim()

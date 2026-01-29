@@ -39,7 +39,6 @@ export default function CrearEvaluacionPage() {
         .then(response => {
           console.log('Comisiones response:', response)
           const profesorComisiones = response.data || response || []
-          // Extract comisiones from profesor-comision response
           const comisionesList = Array.isArray(profesorComisiones)
             ? profesorComisiones.map((pc: any) => pc.comision).filter(Boolean)
             : []
@@ -65,7 +64,6 @@ export default function CrearEvaluacionPage() {
     setLoading(true)
 
     try {
-      // Convert dates to ISO format for backend
       const fechaISO = new Date(fecha).toISOString()
       const fechaDevolucionISO = new Date(fechaDevolucion).toISOString()
 

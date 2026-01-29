@@ -41,7 +41,6 @@ export default function TeacherDashboardPage() {
           const tpsList = tpsResponse.data || tpsResponse.tps || tpsResponse || []
           const evaluacionesList = evaluacionesResponse.data || evaluacionesResponse.evaluaciones || evaluacionesResponse || []
           const profesorComisiones = comisionesResponse.data || comisionesResponse || []
-          // Extract comisiones from profesor-comision response
           const comisionesList = Array.isArray(profesorComisiones)
             ? profesorComisiones.map((pc: any) => pc.comision).filter(Boolean)
             : []
@@ -68,12 +67,9 @@ export default function TeacherDashboardPage() {
     )
   }
 
-  // Calculate statistics from real data
-  // Note: Backend TPs are assignments, not submissions. They have nota/devolucion fields but these represent the assignment's grading status
   const pendingGrades = tps.filter((tp) => !tp.nota).length
   const upcomingEvaluaciones = evaluaciones.filter((ev) => new Date(ev.fecha_evaluacion) > new Date())
 
-  // Calculate average grade from TPs and Evaluaciones that have grades
   const allGrades = [
     ...tps.filter((tp) => tp.nota).map((tp) => tp.nota),
     ...evaluaciones.filter((ev) => ev.nota).map((ev) => ev.nota),
@@ -81,13 +77,11 @@ export default function TeacherDashboardPage() {
   const averageGrade =
     allGrades.length > 0 ? (allGrades.reduce((a, b) => a + b, 0) / allGrades.length).toFixed(1) : "N/A"
 
-  // Get recent TPs without grades (pending grading)
   const recentSubmissions = tps.filter((tp) => !tp.nota).slice(0, 3)
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Welcome Section */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Bienvenido, Prof. {user.apellido}</h1>
@@ -109,7 +103,6 @@ export default function TeacherDashboardPage() {
           </div>
         </div>
 
-  {/* Stats Overview */}
   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -158,7 +151,6 @@ export default function TeacherDashboardPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Pending Submissions */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -199,7 +191,6 @@ export default function TeacherDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Upcoming Evaluations */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -242,7 +233,6 @@ export default function TeacherDashboardPage() {
           </Card>
         </div>
 
-        {/* My Courses */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

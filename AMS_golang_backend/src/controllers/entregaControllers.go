@@ -352,7 +352,6 @@ func (c *EntregaController) DownloadArchivoForAlumno(ctx *gin.Context) {
 		return
 	}
 
-	// Verificar que la entrega pertenece al alumno
 	_, err = c.entregaService.GetEntregaByIDAndAlumnoID(entregaID, int(alumnoID))
 	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Entrega no encontrada o no pertenece al usuario"})

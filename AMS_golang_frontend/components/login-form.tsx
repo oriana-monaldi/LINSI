@@ -15,7 +15,6 @@ import { GraduationCap } from "lucide-react"
 
 /* ----------------------------------------------------------
  * Formulario de Login
- * Maneja:
  *  - Email y contraseña
  *  - Validaciones básicas
  *  - Inicio de sesión con el contexto de autenticación
@@ -31,7 +30,7 @@ export function LoginForm() {
   const router = useRouter()
 
   /* ----------------------------------------------------------
-   * Manejar envío del formulario
+   *  envío del formulario
    * - Previene recarga
    * - Valida campos básicos
    * - Ejecuta login() del contexto
@@ -41,13 +40,11 @@ export function LoginForm() {
     e.preventDefault()
     setError("")
 
-    // Validación mínima
     if (!email.trim() || !password.trim()) {
       setError("Por favor complete todos los campos.")
       return
     }
 
-    // Login: retorna true/false según éxito
     const success = await login(email, password)
 
     if (success) {

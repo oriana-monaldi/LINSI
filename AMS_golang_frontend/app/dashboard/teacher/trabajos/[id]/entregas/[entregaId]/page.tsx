@@ -48,7 +48,6 @@ export default function GradeEntregaPage() {
           const entregaData = response.data || response
           setEntrega(entregaData)
 
-          // Pre-fill if already graded
           if (entregaData.nota) {
             setNota(entregaData.nota.toString())
           }

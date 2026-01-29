@@ -60,7 +60,6 @@ export default function TeacherMateriaDetailPage() {
           const cursadasList = cursadasRes.data || cursadasRes || [];
           setCursadas(Array.isArray(cursadasList) ? cursadasList : []);
 
-          // Filter TPs for this comision
           const allTps = tpsRes.data || tpsRes.tps || tpsRes || [];
           const comisionTps = Array.isArray(allTps)
             ? allTps.filter(

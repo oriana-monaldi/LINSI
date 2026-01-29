@@ -105,7 +105,6 @@ export default function AdminProfesoresPage() {
           </CardContent>
         </Card>
 
-        {/* Professors List */}
         <Card>
           <CardHeader>
             <CardTitle>Profesores ({filteredProfesores.length})</CardTitle>

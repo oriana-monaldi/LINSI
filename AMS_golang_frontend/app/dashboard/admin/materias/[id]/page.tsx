@@ -71,7 +71,6 @@ export default function AdminMateriaDetailPage() {
   const params = useParams();
   const materiaId = params.id as string;
 
-  // Materia state
   const [materia, setMateria] = useState<Materia | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,14 +79,12 @@ export default function AdminMateriaDetailPage() {
   const [editAnoCarrera, setEditAnoCarrera] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  // Confirm dialog state
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     message: string;
     onConfirm: () => Promise<void> | void;
   }>({ open: false, message: "", onConfirm: async () => {} });
 
-  // Comisiones state
   const [comisiones, setComisiones] = useState<Comision[]>([]);
   const [loadingComisiones, setLoadingComisiones] = useState(true);
   const [showNewComision, setShowNewComision] = useState(false);
@@ -95,7 +92,6 @@ export default function AdminMateriaDetailPage() {
   const [newComisionHorarios, setNewComisionHorarios] = useState("");
   const [creatingComision, setCreatingComision] = useState(false);
 
-  // Profesores assignment state
   const [profesoresAsignados, setProfesoresAsignados] = useState<
     Record<number, ProfesorXComision[]>
   >({});
@@ -133,7 +129,6 @@ export default function AdminMateriaDetailPage() {
         setComisiones(comisionesData || []);
         setAllProfesores(profesoresData || []);
 
-        // Fetch professors for each comision
         const asignaciones: Record<number, ProfesorXComision[]> = {};
         for (const comision of comisionesData || []) {
           try {
@@ -308,7 +303,6 @@ export default function AdminMateriaDetailPage() {
         cargo: selectedCargo as "Titular" | "Adjunto" | "JTP",
       });
 
-      // Add profesor info to the assignment
       const profesor = allProfesores.find(
         (p) => p.id === parseInt(selectedProfesorId, 10)
       );

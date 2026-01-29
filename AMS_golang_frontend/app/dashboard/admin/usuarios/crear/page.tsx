@@ -52,7 +52,6 @@ export default function CrearUsuarioPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // If editing, fetch existing user data and prefill the form
     const fetchUser = async () => {
       if (!isEdit || !role) return;
       setSubmitting(true);
@@ -111,7 +110,6 @@ export default function CrearUsuarioPage() {
 
     try {
       if (isEdit && idParam) {
-        // Update existing user
         const payload: any = { nombre, apellido, email };
         if (legajo) payload.legajo = legajo;
         if (telefono) payload.telefono = telefono;
@@ -128,7 +126,6 @@ export default function CrearUsuarioPage() {
           router.push("/dashboard/admin");
         }
       } else {
-        // Create new user
         if (role === "student") {
           await alumnoAPI.create({ nombre, apellido, email, password, legajo });
           router.push("/dashboard/admin/estudiantes");

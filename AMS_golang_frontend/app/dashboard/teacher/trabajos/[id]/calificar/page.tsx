@@ -60,14 +60,12 @@ export default function CalificarTPPage() {
   const [loadingEntrega, setLoadingEntrega] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch entrega data from API
   useEffect(() => {
     async function fetchEntrega() {
       try {
         setLoadingEntrega(true)
         const data = await entregaTPAPI.getById(entregaId)
         setEntrega(data)
-        // Pre-fill if already graded
         if (data.nota) {
           setNota(data.nota.toString())
           setDevolucion(data.devolucion || "")

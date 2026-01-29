@@ -1,4 +1,3 @@
-// Core domain types based on class diagram
 
 export type UserRole = "student" | "teacher" | "admin"
 
@@ -10,7 +9,7 @@ export interface User {
   apellido: string
   email: string
   role: UserRole
-  legajo?: number // For students and teachers
+  legajo?: number 
   contraseña: string
 }
 

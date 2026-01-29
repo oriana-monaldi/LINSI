@@ -25,7 +25,6 @@ export default function EvaluacionDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  // Form fields
   const [nota, setNota] = useState("")
   const [devolucion, setDevolucion] = useState("")
   const [observaciones, setObservaciones] = useState("")
@@ -49,7 +48,6 @@ export default function EvaluacionDetailPage() {
       const ev = response.data || response
       setEvaluacion(ev)
 
-      // Load existing values
       if (ev.nota !== null && ev.nota !== undefined) {
         setNota(ev.nota.toString())
       }

@@ -1,10 +1,9 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-// Generic fetch wrapper with credentials
 async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
-    credentials: "include", // Include cookies for auth
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...options.headers,
@@ -67,7 +66,7 @@ export const evaluacionAPI = {
   delete: (id: string) => fetchAPI(`/evaluaciones/${id}`, { method: "DELETE" }),
 };
 
-// Entregas TP (TP Student Submissions)
+// Entregas TP (TP Student)
 export const entregaTPAPI = {
   getAll: () => fetchAPI("/entregas/"),
   getByTP: (tpId: string) => fetchAPI(`/entregas/tp/${tpId}`),

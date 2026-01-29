@@ -26,7 +26,6 @@ export default function NotificacionesPage() {
   const [notifications, setNotifications] = useState<Notificacion[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Fetch notifications from API
   useEffect(() => {
     async function fetchNotifications() {
       if (!user?.id || (user.role !== "student" && user.role !== "alumno")) return
@@ -73,7 +72,6 @@ export default function NotificacionesPage() {
 
   const markAllAsRead = async () => {
     try {
-      // Mark all unread notifications as read
       const unreadNotifs = notifications.filter((n) => !n.leida)
       await Promise.all(unreadNotifs.map((n) => notificacionAPI.markAsRead(String(n.id))))
       setNotifications((prev) => prev.map((n) => ({ ...n, leida: true })))
@@ -83,7 +81,6 @@ export default function NotificacionesPage() {
   }
 
   const deleteNotification = (id: number) => {
-    // Note: No delete endpoint in API, just remove from local state
     setNotifications((prev) => prev.filter((n) => n.id !== id))
   }
 

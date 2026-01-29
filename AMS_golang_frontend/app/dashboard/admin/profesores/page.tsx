@@ -88,7 +88,6 @@ export default function AdminProfesoresPage() {
           </Link>
         </div>
 
-        {/* Search */}
         <Card>
           <CardHeader>
             <CardTitle>Buscar Profesores</CardTitle>

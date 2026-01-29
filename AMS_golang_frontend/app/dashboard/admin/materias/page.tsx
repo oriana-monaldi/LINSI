@@ -92,7 +92,6 @@ export default function AdminMateriasPage() {
           </Link>
         </div>
 
-        {/* Search */}
         <Card>
           <CardHeader>
             <CardTitle>Buscar Materias</CardTitle>

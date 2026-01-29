@@ -33,7 +33,6 @@ export default function AdminEstudiantesPage() {
   const [editEmail, setEditEmail] = useState("")
   const [editLegajo, setEditLegajo] = useState("")
   const [editTelefono, setEditTelefono] = useState("")
-  // Deletion was removed per admin UI requirement — only edit allowed
 
   useEffect(() => {
     if (!isLoading && (!user || user.role !== "admin")) {
@@ -60,8 +59,6 @@ export default function AdminEstudiantesPage() {
       fetchAlumnos()
     }
   }, [user])
-
-  // Note: delete functionality intentionally removed for admins — only editing is allowed.
 
   if (isLoading || !user || user.role !== "admin") {
     return (
@@ -97,7 +94,6 @@ export default function AdminEstudiantesPage() {
           </Link>
         </div>
 
-        {/* Search */}
         <Card>
           <CardHeader>
             <CardTitle>Buscar Estudiantes</CardTitle>
@@ -115,7 +111,6 @@ export default function AdminEstudiantesPage() {
           </CardContent>
         </Card>
 
-        {/* Students List */}
         <Card>
           <CardHeader>
             <CardTitle>Estudiantes ({filteredStudents.length})</CardTitle>
@@ -180,7 +175,6 @@ export default function AdminEstudiantesPage() {
                           <Button onClick={async () => {
                             try {
                               await alumnoAPI.update(alumno.id.toString(), { nombre: editNombre, apellido: editApellido, email: editEmail, legajo: editLegajo, telefono: editTelefono })
-                              // update local list
                               setAlumnos(alumnos.map(a => a.id === alumno.id ? { ...a, nombre: editNombre, apellido: editApellido, email: editEmail, legajo: editLegajo, telefono: editTelefono } : a))
                               setEditingId(null)
                             } catch (err) {
@@ -205,7 +199,6 @@ export default function AdminEstudiantesPage() {
                           }}>
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          {/* Delete option removed - only edit is available */}
                         </>
                       )}
                     </div>
@@ -216,7 +209,6 @@ export default function AdminEstudiantesPage() {
           </CardContent>
         </Card>
       </div>
-      {/* Confirm dialog removed because delete action is not available in admin UI */}
     </DashboardLayout>
   )
 }

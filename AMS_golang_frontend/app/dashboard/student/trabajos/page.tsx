@@ -84,11 +84,9 @@ export default function TrabajosPage() {
     )
   }
 
-  // Match TPs with student's cursadas (both TP and Cursada have comision_id referencing the same Comision)
   const studentComisionIds = cursadas.map(c => c.comision_id)
   const availableTPs = tps.filter(tp => studentComisionIds.includes(tp.comision_id))
 
-  // Check which TPs have submissions
   const pendingTPs = availableTPs.filter(tp => !entregas.some(e => e.tp_id === tp.id))
   const submittedTPs = entregas
 
@@ -110,7 +108,6 @@ export default function TrabajosPage() {
 
     setSubmitting(true)
     try {
-      // Find the cursada for this TP's comision
       const cursada = cursadas.find(c => c.comision_id === selectedTP.comision_id)
       if (!cursada) {
         throw new Error("No se encontró la cursada para esta comisión")
@@ -127,7 +124,6 @@ export default function TrabajosPage() {
         description: "Tu trabajo ha sido enviado exitosamente"
       })
 
-      // Refresh entregas list
       const entregasResponse = await entregaTPAPI.getMine()
       const entregasList = entregasResponse.data || entregasResponse.entregas || entregasResponse || []
       setEntregas(Array.isArray(entregasList) ? entregasList : [])

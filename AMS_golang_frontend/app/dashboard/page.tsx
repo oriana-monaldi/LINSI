@@ -13,7 +13,6 @@ export default function DashboardPage() {
     if (!isLoading && !user) {
       router.push("/")
     } else if (!isLoading && user) {
-      // Redirect to role-specific dashboard
       switch (user.role) {
         case "alumno":
         case "student":

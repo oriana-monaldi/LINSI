@@ -109,24 +109,18 @@ export default function MateriaDetailPage() {
           entregaTPAPI.getMine(),
         ]);
 
-        // Also fetch all TPs and filter client-side by comision (backend doesn't provide comision-specific endpoint)
         const tpsData = await tpAPI.getAll();
 
-        // continue with entregas processing
-
-        // Find the specific cursada from the student's cursadas
         const foundCursada = (cursadasData || []).find(
           (c: Cursada) => c.id === Number(cursadaId)
         );
         setCursada(foundCursada || null);
 
-        // Filter entregas for this cursada
         const filteredEntregas = (entregasData || []).filter(
           (e: EntregaTP) => e.cursada_id === Number(cursadaId)
         );
         setEntregas(filteredEntregas);
 
-        // If we have the cursada and tpsData, filter TPs that belong to this cursada's comision
         if (foundCursada && Array.isArray(tpsData)) {
           const tpsForComision = (tpsData as TP[]).filter(
             (t) => t.comision_id === foundCursada.comision.id
@@ -150,7 +144,6 @@ export default function MateriaDetailPage() {
     }
   }, [user, cursadaId]);
 
-  // Helper: upload file to backend and create entrega
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   async function handleFileSelect(
@@ -171,7 +164,7 @@ export default function MateriaDetailPage() {
     try {
       setUploading((p) => ({ ...p, [tp.id]: true }));
 
-      // Upload file to backend upload endpoint
+    
       const form = new FormData();
       form.append("file", file);
 
@@ -189,16 +182,13 @@ export default function MateriaDetailPage() {
       const uploadJson = await uploadRes.json();
       const archivo_url = uploadJson.archivo_url;
 
-      // Now create entregaTP record
       const created = await entregaTPAPI.create({
         tp_id: tp.id,
         cursada_id: Number(cursadaId),
         archivo_url,
       });
 
-      // Append to entregas state so UI updates
       setEntregas((prev) => [created as EntregaTP, ...prev]);
-      // Clear selection
       setSelectedFiles((p) => ({ ...p, [tp.id]: null }));
       alert("Entrega creada correctamente");
     } catch (err) {
@@ -326,34 +316,6 @@ export default function MateriaDetailPage() {
           </Card>
         </div>
 
-        {/* TODO: Feedback sections temporarily disabled
-        {cursada.feedback && (
-          <Card>
-            <CardHeader className="flex items-center gap-2 px-4">
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                Feedback del Profesor
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4">
-              <p className="text-muted-foreground">{cursada.feedback}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card>
-          <CardHeader className="flex items-center gap-2 px-4">
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
-              Dejar feedback (Alumno)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4">
-            <FeedbackForm cursadaId={String(cursada.id)} />
-          </CardContent>
-        </Card>
-        */}
-
         <Tabs defaultValue="trabajos" className="space-y-4">
           <TabsList>
             <TabsTrigger value="trabajos">Trabajos Prácticos</TabsTrigger>
@@ -362,10 +324,7 @@ export default function MateriaDetailPage() {
           <TabsContent value="trabajos" className="space-y-4">
             {entregas.length > 0 || tps.length > 0 ? (
               <div className="grid gap-4">
-                {/**
-                 * Show entregas first (submitted items), then show TPs that the student
-                 * still hasn't submitted (so student can see available TPs created by the profesor)
-                 */}
+      
                 {(() => {
                   const tpIdsWithEntrega = new Set(
                     entregas.map((e) => e.tp_id)
@@ -506,7 +465,6 @@ function FeedbackForm({ cursadaId }: { cursadaId: string }) {
         setValue(stored);
       }
     } catch (e) {
-      // localStorage may be unavailable in some environments
     }
   }, [storageKey]);
 
@@ -516,7 +474,6 @@ function FeedbackForm({ cursadaId }: { cursadaId: string }) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
-      // ignore
     }
   };
 

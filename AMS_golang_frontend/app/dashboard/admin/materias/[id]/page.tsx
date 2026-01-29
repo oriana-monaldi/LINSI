@@ -498,7 +498,6 @@ export default function AdminMateriaDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Comisiones Card */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -521,7 +520,6 @@ export default function AdminMateriaDetailPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {/* New Comision Form */}
             {showNewComision && (
               <div className="mb-4 p-4 border rounded-lg bg-muted/50 space-y-4">
                 <h4 className="font-medium">Nueva Comision</h4>
@@ -560,7 +558,6 @@ export default function AdminMateriaDetailPage() {
               </div>
             )}
 
-            {/* Comisiones List */}
             {loadingComisiones ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -604,7 +601,6 @@ export default function AdminMateriaDetailPage() {
                       </div>
                     </div>
 
-                    {/* Profesores asignados */}
                     <div className="pl-4 border-l-2 border-muted">
                       <div className="flex items-center justify-between mb-2">
                         <p className="text-sm font-medium">
@@ -626,7 +622,6 @@ export default function AdminMateriaDetailPage() {
                         </Button>
                       </div>
 
-                      {/* Assign Professor Form */}
                       {showAssignProfesor === comision.id && (
                         <div className="mb-3 p-3 bg-muted/50 rounded space-y-3">
                           <div className="grid grid-cols-2 gap-3">
@@ -683,7 +678,6 @@ export default function AdminMateriaDetailPage() {
                         </div>
                       )}
 
-                      {/* Lista de profesores */}
                       {(profesoresAsignados[comision.id] || []).length === 0 ? (
                         <p className="text-sm text-muted-foreground">
                           Sin profesores asignados
@@ -733,6 +727,3 @@ export default function AdminMateriaDetailPage() {
     </DashboardLayout>
   );
 }
-
-// Confirm dialog (shared)
-// Confirm dialog is rendered via `components/ui/confirm-dialog.tsx`

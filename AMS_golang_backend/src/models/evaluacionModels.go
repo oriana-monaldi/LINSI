@@ -21,3 +21,19 @@ type EvaluacionUpdateRequest struct {
 	Observaciones   *string  `json:"observaciones,omitempty"`
 	ComisionId      *int     `json:"comision_id,omitempty"`
 }
+
+type EntregaEvaluacion struct {
+	ID int `json:"id" gorm:"primaryKey;autoIncrement"`
+
+	EvaluacionId int              `json:"evaluacion_id" gorm:"not null"`
+	Evaluacion   EvaluacionModel `json:"evaluacion" gorm:"foreignKey:EvaluacionId;references:ID"`
+
+	AlumnoId int   `json:"alumno_id" gorm:"not null"`
+	Alumno   Alumno `json:"alumno" gorm:"foreignKey:AlumnoId;references:ID"`
+
+	ArchivoURL   string   `json:"archivo_url" gorm:"type:text"`
+	FechaEntrega string   `json:"fecha_entrega" gorm:"type:timestamp"`
+	Nota         *float64 `json:"nota" gorm:"type:float"`
+	Devolucion   *string  `json:"devolucion" gorm:"type:text"`
+	Observaciones *string `json:"observaciones" gorm:"type:text"`
+}

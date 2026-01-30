@@ -87,7 +87,6 @@ export default function TPDetailPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <Link href="/dashboard/teacher/trabajos">
             <Button variant="ghost" size="icon">

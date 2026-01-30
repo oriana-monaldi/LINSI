@@ -15,15 +15,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cursadaAPI, entregaTPAPI, tpAPI } from "@/lib/api";
+import { cursadaAPI, entregaTPAPI, tpAPI, evaluacionAPI } from "@/lib/api";
 import {
   BookOpen,
   Award,
   FileText,
   TrendingUp,
   AlertCircle,
+  Calendar,
 } from "lucide-react";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
 
 interface Materia {
   id: number;
@@ -71,15 +74,28 @@ interface EntregaTP {
   tp: TP;
 }
 
+interface Evaluacion {
+  id: number;
+  fecha_evaluacion: string;
+  fecha_devolucion: string;
+  temas: string;
+  nota: number | null;
+  devolucion: string;
+  observaciones: string;
+  comision_id: number;
+}
+
 export default function MateriaDetailPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
+  const { toast } = useToast();
   const cursadaId = params.id as string;
 
   const [cursada, setCursada] = useState<Cursada | null>(null);
   const [entregas, setEntregas] = useState<EntregaTP[]>([]);
   const [tps, setTps] = useState<TP[]>([]);
+  const [evaluaciones, setEvaluaciones] = useState<Evaluacion[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<
     Record<number, File | null>
   >({});
@@ -126,8 +142,24 @@ export default function MateriaDetailPage() {
             (t) => t.comision_id === foundCursada.comision.id
           );
           setTps(tpsForComision);
+
+          // Obtener evaluaciones de la comisión
+          try {
+            console.log("Fetching evaluaciones for comision_id:", foundCursada.comision.id);
+            const evaluacionesData = await evaluacionAPI.getByComision(
+              String(foundCursada.comision.id)
+            );
+            console.log("Evaluaciones response:", evaluacionesData);
+            const evalList = Array.isArray(evaluacionesData) ? evaluacionesData : (evaluacionesData.data || evaluacionesData.evaluaciones || []);
+            console.log("Evaluaciones list:", evalList);
+            setEvaluaciones(Array.isArray(evalList) ? evalList : []);
+          } catch (err) {
+            console.error("Error loading evaluaciones:", err);
+            setEvaluaciones([]);
+          }
         } else {
           setTps([]);
+          setEvaluaciones([]);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -157,7 +189,11 @@ export default function MateriaDetailPage() {
   async function handleSubmitEntrega(tp: TP) {
     const file = selectedFiles[tp.id];
     if (!file) {
-      alert("Selecciona un archivo antes de enviar");
+      toast({
+        title: "Error",
+        description: "Selecciona un archivo antes de enviar",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -190,10 +226,17 @@ export default function MateriaDetailPage() {
 
       setEntregas((prev) => [created as EntregaTP, ...prev]);
       setSelectedFiles((p) => ({ ...p, [tp.id]: null }));
-      alert("Entrega creada correctamente");
+      toast({
+        title: "Éxito",
+        description: "Entrega creada correctamente"
+      });
     } catch (err) {
       console.error(err);
-      alert(err instanceof Error ? err.message : "Error al enviar entrega");
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Error al enviar entrega",
+        variant: "destructive"
+      });
     } finally {
       setUploading((p) => ({ ...p, [tp.id]: false }));
     }
@@ -252,6 +295,12 @@ export default function MateriaDetailPage() {
   const allGrades = completedEntregas
     .filter((e) => e.nota !== null)
     .map((e) => e.nota!);
+  
+  // Agregar la nota de evaluación si existe
+  if (cursada?.nota_final !== null && cursada?.nota_final !== undefined) {
+    allGrades.push(cursada.nota_final);
+  }
+  
   const average =
     allGrades.length > 0
       ? (allGrades.reduce((a, b) => a + b, 0) / allGrades.length).toFixed(1)
@@ -305,6 +354,7 @@ export default function MateriaDetailPage() {
         <Tabs defaultValue="trabajos" className="space-y-4">
           <TabsList>
             <TabsTrigger value="trabajos">Trabajos Prácticos</TabsTrigger>
+            <TabsTrigger value="evaluaciones">Evaluaciones</TabsTrigger>
           </TabsList>
 
           <TabsContent value="trabajos" className="space-y-4">
@@ -429,6 +479,80 @@ export default function MateriaDetailPage() {
                   <p className="text-lg font-medium">
                     No hay trabajos prácticos
                   </p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="evaluaciones" className="space-y-4">
+            {evaluaciones.length > 0 ? (
+              <div className="grid gap-4">
+                {evaluaciones.map((evaluacion) => (
+                  <Card key={evaluacion.id}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-base">
+                            Evaluación
+                          </CardTitle>
+                          <CardDescription className="flex items-center gap-2 mt-1" suppressHydrationWarning>
+                            <Calendar className="h-3 w-3" />
+                            {format(
+                              new Date(evaluacion.fecha_evaluacion),
+                              "EEEE dd 'de' MMMM, yyyy",
+                              { locale: es }
+                            )}
+                          </CardDescription>
+                        </div>
+                        {cursada?.nota_final !== null && cursada?.nota_final !== undefined ? (
+                          <Badge className="bg-green-500 hover:bg-green-600">
+                            Nota: {cursada.nota_final}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">Pendiente</Badge>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-sm font-medium mb-1">Temas:</p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                          {evaluacion.temas}
+                        </p>
+                      </div>
+
+                      {evaluacion.fecha_devolucion && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground" suppressHydrationWarning>
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            Devolución:{" "}
+                            {format(
+                              new Date(evaluacion.fecha_devolucion),
+                              "dd/MM/yyyy"
+                            )}
+                          </span>
+                        </div>
+                      )}
+
+                      {cursada?.feedback && (
+                        <div className="p-3 bg-muted rounded-lg">
+                          <p className="text-sm font-medium mb-1">
+                            Devolución del profesor:
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {cursada.feedback}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-lg font-medium">No hay evaluaciones</p>
                 </CardContent>
               </Card>
             )}

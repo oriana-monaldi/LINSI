@@ -64,14 +64,22 @@ export default function CrearEvaluacionPage() {
     setLoading(true)
 
     try {
-      const fechaISO = new Date(fecha).toISOString()
-      const fechaDevolucionISO = new Date(fechaDevolucion).toISOString()
+      // Format dates as YYYY-MM-DD
+      const fechaFormatted = fecha // Already in YYYY-MM-DD format from input
+      const fechaDevolucionFormatted = fechaDevolucion // Already in YYYY-MM-DD format from input
+
+      console.log("Creating evaluation with data:", {
+        temas,
+        comision_id: parseInt(comisionId),
+        fecha_evaluacion: fechaFormatted,
+        fecha_devolucion: fechaDevolucionFormatted,
+      })
 
       await evaluacionAPI.create({
         temas,
         comision_id: parseInt(comisionId),
-        fecha_evaluacion: fechaISO,
-        fecha_devolucion: fechaDevolucionISO,
+        fecha_evaluacion: fechaFormatted,
+        fecha_devolucion: fechaDevolucionFormatted,
       })
 
       toast({
@@ -79,8 +87,10 @@ export default function CrearEvaluacionPage() {
         description: "La evaluación ha sido programada.",
       })
 
-      router.push("/dashboard/teacher/evaluaciones")
+      // Redirect to teacher dashboard after creation
+      router.push("/dashboard/teacher")
     } catch (error: any) {
+      console.error("Error creating evaluation:", error)
       toast({
         title: "Error",
         description: error.message || "No se pudo crear la evaluación",

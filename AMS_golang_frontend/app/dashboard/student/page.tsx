@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { cursadaAPI, entregaTPAPI, notificacionAPI } from "@/lib/api"
+import { cursadaAPI, entregaTPAPI, notificacionAPI, tpAPI, evaluacionAPI } from "@/lib/api"
 import { Calendar, FileText, TrendingUp, Clock, CheckCircle2, AlertCircle, BookOpen, Award, Bell } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -64,6 +64,28 @@ interface EntregaTP {
   cursada: Cursada
 }
 
+interface EntregaEvaluacion {
+  id: number
+  evaluacion_id: number
+  alumno_id: number
+  evaluacion: {
+    id: number
+    fecha_evaluacion: string
+    fecha_devolucion: string
+    temas: string
+    nota: number | null
+    devolucion: string | null
+    observaciones: string | null
+    comision_id: number
+    comision: Comision
+  }
+  archivo_url: string
+  fecha_entrega: string
+  nota: number | null
+  devolucion: string | null
+  observaciones: string | null
+}
+
 interface Notificacion {
   id: number
   mensaje: string
@@ -77,7 +99,9 @@ export default function StudentDashboardPage() {
   const router = useRouter()
 
   const [cursadas, setCursadas] = useState<Cursada[]>([])
+  const [tps, setTps] = useState<TP[]>([])
   const [entregas, setEntregas] = useState<EntregaTP[]>([])
+  const [evaluaciones, setEvaluaciones] = useState<EntregaEvaluacion[]>([])
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
   const [dataLoading, setDataLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -96,15 +120,22 @@ export default function StudentDashboardPage() {
       setError(null)
 
       try {
-        const [cursadasData, entregasData, notificacionesData] = await Promise.all([
+        const [cursadasData, tpsData, entregasData, evaluacionesData, notificacionesData] = await Promise.all([
           cursadaAPI.getByAlumno(String(user.id)),
+          tpAPI.getMyAsStudent().catch(() => []), // Fallback if endpoint not available
           entregaTPAPI.getMine(),
+          evaluacionAPI.getMyAsStudent().catch(() => []), // Get student's evaluation submissions
           notificacionAPI.getByAlumno(String(user.id)),
         ])
 
+        console.log("Evaluaciones data from API:", evaluacionesData)
+
         setCursadas(cursadasData || [])
+        setTps(tpsData || [])
         setEntregas(entregasData || [])
         setNotificaciones(notificacionesData || [])
+
+        setEvaluaciones(evaluacionesData || [])
       } catch (err) {
         console.error("Error fetching data:", err)
         setError(err instanceof Error ? err.message : "Error al cargar los datos")
@@ -148,13 +179,29 @@ export default function StudentDashboardPage() {
     )
   }
 
+  // Create a map of entrega by TP ID for easy lookup
+  const entregasByTpId = new Map(entregas.map(e => [e.tp_id, e]))
+
+  // Calculate pending and completed TPs based on entregas
   const pendingEntregas = entregas.filter((e) => e.estado === "pendiente")
   const completedEntregas = entregas.filter((e) => e.estado === "calificado")
-  const upcomingEntregas = entregas
-    .filter((e) => e.tp && new Date(e.tp.fecha_entrega) > new Date() && e.estado === "pendiente")
-    .slice(0, 3)
+  
+  // Get upcoming TPs (both with and without entregas) - for now fallback to entregas if tps is empty
+  const upcomingTps = tps && tps.length > 0
+    ? tps
+        .filter((tp) => new Date(tp.fecha_entrega) > new Date())
+        .sort((a, b) => new Date(a.fecha_entrega).getTime() - new Date(b.fecha_entrega).getTime())
+        .slice(0, 3)
+    : entregas
+        .filter((e) => e.tp && new Date(e.tp.fecha_entrega) > new Date() && e.estado === "pendiente")
+        .slice(0, 3)
 
-  const allGrades = completedEntregas.filter((e) => e.nota !== null).map((e) => e.nota!)
+  // Calculate average grade including both TPs and evaluations
+  const completedTpGrades = completedEntregas.filter((e) => e.nota !== null).map((e) => e.nota!)
+  const evaluacionGrades = evaluaciones
+    .filter((e) => e.nota !== null && e.nota !== undefined)
+    .map((e) => parseFloat(String(e.nota)))
+  const allGrades = [...completedTpGrades, ...evaluacionGrades]
   const averageGrade =
     allGrades.length > 0 ? (allGrades.reduce((a, b) => a + b, 0) / allGrades.length).toFixed(1) : "N/A"
 
@@ -217,20 +264,33 @@ export default function StudentDashboardPage() {
               <CardDescription>Trabajos prácticos con fecha de entrega próxima</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {upcomingEntregas.length > 0 ? (
-                upcomingEntregas.map((entrega) => {
+              {upcomingTps.length > 0 ? (
+                upcomingTps.map((item) => {
+                  // Handle both TP and EntregaTP objects
+                  const tp = item.tp || item
+                  const id = item.id || item.tp_id
+                  const consigna = item.consigna || item.tp?.consigna
+                  const fecha_entrega = item.fecha_entrega || item.tp?.fecha_entrega
+                  const comision = item.comision || item.tp?.comision
+                  const estado = item.estado
+
                   const daysUntil = Math.ceil(
-                    (new Date(entrega.tp.fecha_entrega).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
+                    (new Date(fecha_entrega).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
                   )
 
                   return (
-                    <div key={entrega.id} className="flex items-start justify-between border-l-4 border-primary pl-4 py-2">
+                    <div key={id} className="flex items-start justify-between border-l-4 border-primary pl-4 py-2">
                       <div className="space-y-1 flex-1">
-                        <p className="font-medium text-sm">{entrega.tp.comision?.materia?.nombre || entrega.tp.comision?.nombre}</p>
-                        <p className="text-sm text-muted-foreground line-clamp-2">{entrega.tp.consigna}</p>
+                        <p className="font-medium text-sm">{comision?.materia?.nombre || comision?.nombre}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{consigna}</p>
                         <p className="text-xs text-muted-foreground">
-                          Entrega: {format(new Date(entrega.tp.fecha_entrega), "dd 'de' MMMM", { locale: es })}
+                          Entrega: {format(new Date(fecha_entrega), "dd 'de' MMMM", { locale: es })}
                         </p>
+                        {estado && (
+                          <p className="text-xs text-muted-foreground">
+                            Estado: {estado}
+                          </p>
+                        )}
                       </div>
                       <Badge variant={daysUntil <= 3 ? "destructive" : "secondary"}>
                         {daysUntil} {daysUntil === 1 ? "día" : "días"}
@@ -300,7 +360,7 @@ export default function StudentDashboardPage() {
               {cursadas.map((cursada) => {
                 const cursadaEntregas = entregas.filter((e) => e.cursada_id === cursada.id)
                 const completedCount = cursadaEntregas.filter((e) => e.estado === "calificado").length
-                const totalCount = cursadaEntregas.length
+                const totalCount = tps.filter((tp) => tp.comision_id === cursada.comision_id).length
                 const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0
 
                 return (
@@ -318,20 +378,6 @@ export default function StudentDashboardPage() {
                           </span>
                         </div>
                         <Progress value={progress} className="h-2" />
-                        <div className="flex items-center gap-4 text-sm">
-                          {cursada.nota_conceptual && (
-                            <div className="flex items-center gap-1">
-                              <Award className="h-4 w-4 text-muted-foreground" />
-                              <span>Conceptual: {cursada.nota_conceptual}</span>
-                            </div>
-                          )}
-                          {cursada.nota_final && (
-                            <div className="flex items-center gap-1">
-                              <FileText className="h-4 w-4 text-muted-foreground" />
-                              <span>Final: {cursada.nota_final}</span>
-                            </div>
-                          )}
-                        </div>
                       </CardContent>
                     </Card>
                   </Link>

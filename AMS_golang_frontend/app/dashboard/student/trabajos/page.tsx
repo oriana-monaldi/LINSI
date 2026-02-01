@@ -51,7 +51,7 @@ export default function TrabajosPage() {
     if (user && (user.role === "student" || user.role === "alumno")) {
       setLoading(true)
       Promise.all([
-        tpAPI.getAll(),
+        tpAPI.getMyAsStudent().catch(() => []), // Fallback if endpoint not available
         entregaTPAPI.getMine(),
         cursadaAPI.getByAlumno(user.id.toString()),
       ])
@@ -84,8 +84,8 @@ export default function TrabajosPage() {
     )
   }
 
-  const studentComisionIds = cursadas.map(c => c.comision_id)
-  const availableTPs = tps.filter(tp => studentComisionIds.includes(tp.comision_id))
+  // tps now already filtered by the API endpoint for the student's comisiones
+  const availableTPs = tps
 
   const pendingTPs = availableTPs.filter(tp => !entregas.some(e => e.tp_id === tp.id))
   const submittedTPs = entregas

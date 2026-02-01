@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { evaluacionAPI, cursadaAPI } from "@/lib/api"
-import { ArrowLeft, FileText, Calendar, Users, CheckCircle2, Clock, AlertCircle } from "lucide-react"
+import { ArrowLeft, FileText, Calendar, Users, CheckCircle2, Clock, AlertCircle, Pencil } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import Link from "next/link"
@@ -23,6 +23,7 @@ export default function EvaluacionDetailPage() {
 
   const [evaluacion, setEvaluacion] = useState<any>(null)
   const [cursadas, setCursadas] = useState<any[]>([])
+  const [entregasEvaluacion, setEntregasEvaluacion] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -39,6 +40,15 @@ export default function EvaluacionDetailPage() {
           console.log('Evaluacion:', evalResponse)
           const evalData = evalResponse.data || evalResponse
           setEvaluacion(evalData)
+
+          try {
+            const entregasResponse = await evaluacionAPI.getEntregas(evaluacionId)
+            const entregasData = entregasResponse.data || entregasResponse || []
+            setEntregasEvaluacion(Array.isArray(entregasData) ? entregasData : [])
+          } catch (err) {
+            console.error('Error loading entregas evaluacion:', err)
+            setEntregasEvaluacion([])
+          }
 
           // Obtener las cursadas de la comisión
           if (evalData.comision_id) {
@@ -87,8 +97,10 @@ export default function EvaluacionDetailPage() {
   }
 
   // Para evaluaciones, mostramos todos los estudiantes de la cursada
+  const entregasByAlumno = new Map(entregasEvaluacion.map((e) => [e.alumno_id, e]))
   const totalCount = cursadas.length
-  const gradedCount = 0 // Por ahora, hasta que implementemos el sistema de calificaciones
+  const gradedCount = entregasEvaluacion.filter((e) => e.nota !== null && e.nota !== undefined).length
+  const pendingCount = totalCount - gradedCount
 
   return (
     <DashboardLayout>
@@ -105,6 +117,12 @@ export default function EvaluacionDetailPage() {
               {evaluacion?.comision?.nombre || `Comisión ${evaluacion?.comision_id}`}
             </p>
           </div>
+          <Link href={`/dashboard/teacher/evaluaciones/${evaluacionId}/editar`}>
+            <Button variant="outline" size="sm">
+              <Pencil className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          </Link>
         </div>
 
         {loading ? (
@@ -168,7 +186,7 @@ export default function EvaluacionDetailPage() {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{totalCount - gradedCount}</div>
+                  <div className="text-2xl font-bold">{pendingCount}</div>
                 </CardContent>
               </Card>
 
@@ -206,9 +224,10 @@ export default function EvaluacionDetailPage() {
                             <p className="font-medium">
                               {cursada.alumno?.nombre} {cursada.alumno?.apellido}
                             </p>
-                            {cursada.nota_final ? (
+                            {entregasByAlumno.get(cursada.alumno_id)?.nota !== null &&
+                            entregasByAlumno.get(cursada.alumno_id)?.nota !== undefined ? (
                               <Badge className="bg-green-500 hover:bg-green-600">
-                                Calificado: {cursada.nota_final}
+                                Calificado: {entregasByAlumno.get(cursada.alumno_id)?.nota}
                               </Badge>
                             ) : (
                               <Badge variant="secondary">Pendiente</Badge>
@@ -220,7 +239,10 @@ export default function EvaluacionDetailPage() {
                         </div>
                         <Link href={`/dashboard/teacher/evaluaciones/${evaluacionId}/calificar/${cursada.id}`}>
                           <Button size="sm">
-                            {cursada.nota_final ? "Ver Detalles" : "Calificar"}
+                            {entregasByAlumno.get(cursada.alumno_id)?.nota !== null &&
+                            entregasByAlumno.get(cursada.alumno_id)?.nota !== undefined
+                              ? "Ver Detalles"
+                              : "Calificar"}
                           </Button>
                         </Link>
                       </div>

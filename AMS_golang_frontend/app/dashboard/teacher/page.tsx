@@ -7,7 +7,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { tpAPI, evaluacionAPI, comisionAPI } from "@/lib/api"
+import { tpAPI, evaluacionAPI, comisionAPI, entregaTPAPI } from "@/lib/api"
 import { FileText, Users, AlertCircle, Calendar, Plus, BookOpen } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -17,6 +17,7 @@ export default function TeacherDashboardPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const [tps, setTps] = useState<any[]>([])
+  const [entregas, setEntregas] = useState<any[]>([])
   const [evaluaciones, setEvaluaciones] = useState<any[]>([])
   const [comisiones, setComisiones] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -32,13 +33,15 @@ export default function TeacherDashboardPage() {
       setLoading(true)
       Promise.all([
         tpAPI.getMine(),
+        entregaTPAPI.getAll(),
         evaluacionAPI.getMine(),
         comisionAPI.getByProfesor(),
       ])
-        .then(([tpsResponse, evaluacionesResponse, comisionesResponse]) => {
-          console.log('Dashboard data:', { tpsResponse, evaluacionesResponse, comisionesResponse })
+        .then(([tpsResponse, entregasResponse, evaluacionesResponse, comisionesResponse]) => {
+          console.log('Dashboard data:', { tpsResponse, entregasResponse, evaluacionesResponse, comisionesResponse })
 
           const tpsList = tpsResponse.data || tpsResponse.tps || tpsResponse || []
+          const entregasList = entregasResponse.data || entregasResponse.entregas || entregasResponse || []
           const evaluacionesList = evaluacionesResponse.data || evaluacionesResponse.evaluaciones || evaluacionesResponse || []
           const profesorComisiones = comisionesResponse.data || comisionesResponse || []
           const comisionesList = Array.isArray(profesorComisiones)
@@ -46,12 +49,14 @@ export default function TeacherDashboardPage() {
             : []
 
           setTps(Array.isArray(tpsList) ? tpsList : [])
+          setEntregas(Array.isArray(entregasList) ? entregasList : [])
           setEvaluaciones(Array.isArray(evaluacionesList) ? evaluacionesList : [])
           setComisiones(comisionesList)
         })
         .catch(err => {
           console.error('Error loading dashboard data:', err)
           setTps([])
+          setEntregas([])
           setEvaluaciones([])
           setComisiones([])
         })
@@ -67,7 +72,13 @@ export default function TeacherDashboardPage() {
     )
   }
 
-  const pendingGrades = tps.filter((tp) => !tp.nota).length
+  const professorTpIds = new Set(tps.map((tp) => Number(tp.id)))
+  const pendingEntregas = entregas.filter((entrega) => {
+    const entregaTpId = Number(entrega?.tp_id ?? entrega?.tp?.id ?? entrega?.Tp?.ID)
+    const isProfessorTp = Number.isFinite(entregaTpId) ? professorTpIds.has(entregaTpId) : false
+    return isProfessorTp && (entrega?.estado === "pendiente" || entrega?.nota == null)
+  })
+  const pendingGrades = pendingEntregas.length
   const upcomingEvaluaciones = evaluaciones.filter((ev) => new Date(ev.fecha_evaluacion) > new Date())
 
   const allGrades = [
@@ -77,7 +88,7 @@ export default function TeacherDashboardPage() {
   const averageGrade =
     allGrades.length > 0 ? (allGrades.reduce((a, b) => a + b, 0) / allGrades.length).toFixed(1) : "N/A"
 
-  const recentSubmissions = tps.filter((tp) => !tp.nota).slice(0, 3)
+  const recentSubmissions = pendingEntregas.slice(0, 3)
 
   return (
     <DashboardLayout>
@@ -165,16 +176,21 @@ export default function TeacherDashboardPage() {
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                 </div>
               ) : recentSubmissions.length > 0 ? (
-                recentSubmissions.map((tp) => {
-                  const tpTitle = tp.titulo || tp.nombre || (tp.consigna ? String(tp.consigna).split('\n')[0].slice(0, 80) : `Trabajo ${tp.id}`)
+                recentSubmissions.map((entrega) => {
+                  const tp = entrega.tp || entrega.Tp
+                  const tpTitle = tp?.titulo || tp?.nombre || (tp?.consigna ? String(tp.consigna).split('\n')[0].slice(0, 80) : `Trabajo ${entrega.tp_id}`)
                   return (
-                    <div key={tp.id} className="flex items-start justify-between border-l-4 border-primary pl-4 py-2">
+                    <div key={entrega.id} className="flex items-start justify-between border-l-4 border-primary pl-4 py-2">
                       <div className="space-y-1 flex-1">
                         <p className="font-medium text-sm">{tpTitle}</p>
-                        <p className="text-sm text-muted-foreground">{tp.comision?.nombre || `Comisión ${tp.comision_id}`}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-1">{tp.consigna}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {tp?.comision?.nombre || `Comisión ${tp?.comision_id || entrega?.tp?.comision_id || "-"}`}
+                        </p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">
+                          {entrega?.alumno?.nombre ? `${entrega.alumno.nombre} ${entrega.alumno.apellido}` : "Entrega pendiente"}
+                        </p>
                       </div>
-                      <Link href={`/dashboard/teacher/trabajos/${tp.id}`}>
+                      <Link href={`/dashboard/teacher/trabajos/${entrega.tp_id}`}>
                         <Button size="sm">Ver Entregas</Button>
                       </Link>
                     </div>
@@ -251,7 +267,10 @@ export default function TeacherDashboardPage() {
                 {comisiones.map((comision) => {
                   const comisionTPs = tps.filter((tp) => tp.comision_id === comision.id)
                   const comisionEvaluaciones = evaluaciones.filter((ev) => ev.comision_id === comision.id)
-                  const pendingCount = comisionTPs.filter((tp) => !tp.nota).length
+                  const pendingCount = pendingEntregas.filter((entrega) => {
+                    const entregaComisionId = Number(entrega?.tp?.comision_id ?? entrega?.tp?.comision?.id)
+                    return Number.isFinite(entregaComisionId) && entregaComisionId === Number(comision.id)
+                  }).length
 
                   return (
                     <Link key={comision.id} href={`/dashboard/teacher/materias/${comision.id}`}>

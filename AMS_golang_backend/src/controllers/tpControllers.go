@@ -44,6 +44,23 @@ func (c *TpController) GetMyTps(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, tps)
 }
 
+// GetMyTpsAsAlumno returns only TPs for comisiones that the current student is enrolled in
+func (c *TpController) GetMyTpsAsAlumno(ctx *gin.Context) {
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	alumnoID := int(userID.(float64))
+	tps, err := c.tpService.GetTpsByAlumnoID(alumnoID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, tps)
+}
+
 func (c *TpController) GetTpByID(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {

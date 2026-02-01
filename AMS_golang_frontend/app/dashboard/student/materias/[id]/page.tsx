@@ -74,15 +74,26 @@ interface EntregaTP {
   tp: TP;
 }
 
-interface Evaluacion {
+interface EntregaEvaluacion {
   id: number;
-  fecha_evaluacion: string;
-  fecha_devolucion: string;
-  temas: string;
+  evaluacion_id: number;
+  alumno_id: number;
+  evaluacion: {
+    id: number;
+    fecha_evaluacion: string;
+    fecha_devolucion: string;
+    temas: string;
+    nota: number | null;
+    devolucion: string | null;
+    observaciones: string | null;
+    comision_id: number;
+    comision: Comision;
+  };
+  archivo_url: string;
+  fecha_entrega: string;
   nota: number | null;
-  devolucion: string;
-  observaciones: string;
-  comision_id: number;
+  devolucion: string | null;
+  observaciones: string | null;
 }
 
 export default function MateriaDetailPage() {
@@ -95,7 +106,7 @@ export default function MateriaDetailPage() {
   const [cursada, setCursada] = useState<Cursada | null>(null);
   const [entregas, setEntregas] = useState<EntregaTP[]>([]);
   const [tps, setTps] = useState<TP[]>([]);
-  const [evaluaciones, setEvaluaciones] = useState<Evaluacion[]>([]);
+  const [evaluaciones, setEvaluaciones] = useState<EntregaEvaluacion[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<
     Record<number, File | null>
   >({});
@@ -143,16 +154,25 @@ export default function MateriaDetailPage() {
           );
           setTps(tpsForComision);
 
-          // Obtener evaluaciones de la comisión
+          // Obtener evaluaciones del alumno y filtrar por comisión
           try {
-            console.log("Fetching evaluaciones for comision_id:", foundCursada.comision.id);
-            const evaluacionesData = await evaluacionAPI.getByComision(
-              String(foundCursada.comision.id)
-            );
+            console.log("Fetching evaluaciones for student in comision:", foundCursada.comision.id);
+            const evaluacionesData = await evaluacionAPI.getMyAsStudent().catch((err) => {
+              console.error("Error from getMyAsStudent:", err);
+              return [];
+            });
             console.log("Evaluaciones response:", evaluacionesData);
-            const evalList = Array.isArray(evaluacionesData) ? evaluacionesData : (evaluacionesData.data || evaluacionesData.evaluaciones || []);
-            console.log("Evaluaciones list:", evalList);
-            setEvaluaciones(Array.isArray(evalList) ? evalList : []);
+            const evalList = Array.isArray(evaluacionesData) ? evaluacionesData : (evaluacionesData?.data || evaluacionesData?.evaluaciones || []);
+            console.log("Evaluaciones list after parsing:", evalList);
+            console.log("Filtering by comision_id:", foundCursada.comision.id);
+            
+            // Filter evaluaciones by comision
+            const evalForComision = evalList.filter((e: EntregaEvaluacion) => {
+              console.log("Checking entrega:", e.id, "evaluacion?.comision_id:", e.evaluacion?.comision_id, "foundCursada.comision.id:", foundCursada.comision.id);
+              return e.evaluacion?.comision_id === foundCursada.comision.id;
+            });
+            console.log("Filtered evaluaciones for comision:", evalForComision);
+            setEvaluaciones(Array.isArray(evalForComision) ? evalForComision : []);
           } catch (err) {
             console.error("Error loading evaluaciones:", err);
             setEvaluaciones([]);
@@ -287,19 +307,18 @@ export default function MateriaDetailPage() {
   }
 
   const completedEntregas = entregas.filter((e) => e.estado === "calificado");
-  const progress =
-    entregas.length > 0
-      ? (completedEntregas.length / entregas.length) * 100
-      : 0;
+  const totalTps = tps.length;
+  const progress = totalTps > 0 ? (completedEntregas.length / totalTps) * 100 : 0;
 
   const allGrades = completedEntregas
     .filter((e) => e.nota !== null)
     .map((e) => e.nota!);
-  
-  // Agregar la nota de evaluación si existe
-  if (cursada?.nota_final !== null && cursada?.nota_final !== undefined) {
-    allGrades.push(cursada.nota_final);
-  }
+
+  const evaluacionGrades = evaluaciones
+    .filter((e) => e.nota !== null && e.nota !== undefined)
+    .map((e) => Number(e.nota));
+
+  allGrades.push(...evaluacionGrades.filter((n) => Number.isFinite(n)));
   
   const average =
     allGrades.length > 0
@@ -487,8 +506,8 @@ export default function MateriaDetailPage() {
           <TabsContent value="evaluaciones" className="space-y-4">
             {evaluaciones.length > 0 ? (
               <div className="grid gap-4">
-                {evaluaciones.map((evaluacion) => (
-                  <Card key={evaluacion.id}>
+                {evaluaciones.map((entregaEvaluacion) => (
+                  <Card key={entregaEvaluacion.id}>
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -498,15 +517,15 @@ export default function MateriaDetailPage() {
                           <CardDescription className="flex items-center gap-2 mt-1" suppressHydrationWarning>
                             <Calendar className="h-3 w-3" />
                             {format(
-                              new Date(evaluacion.fecha_evaluacion),
+                              new Date(entregaEvaluacion.evaluacion.fecha_evaluacion),
                               "EEEE dd 'de' MMMM, yyyy",
                               { locale: es }
                             )}
                           </CardDescription>
                         </div>
-                        {cursada?.nota_final !== null && cursada?.nota_final !== undefined ? (
+                        {entregaEvaluacion.nota !== null && entregaEvaluacion.nota !== undefined ? (
                           <Badge className="bg-green-500 hover:bg-green-600">
-                            Nota: {cursada.nota_final}
+                            Nota: {entregaEvaluacion.nota}
                           </Badge>
                         ) : (
                           <Badge variant="secondary">Pendiente</Badge>
@@ -517,30 +536,30 @@ export default function MateriaDetailPage() {
                       <div className="p-3 bg-muted rounded-lg">
                         <p className="text-sm font-medium mb-1">Temas:</p>
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                          {evaluacion.temas}
+                          {entregaEvaluacion.evaluacion.temas}
                         </p>
                       </div>
 
-                      {evaluacion.fecha_devolucion && (
+                      {entregaEvaluacion.evaluacion.fecha_devolucion && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground" suppressHydrationWarning>
                           <Calendar className="h-4 w-4" />
                           <span>
                             Devolución:{" "}
                             {format(
-                              new Date(evaluacion.fecha_devolucion),
+                              new Date(entregaEvaluacion.evaluacion.fecha_devolucion),
                               "dd/MM/yyyy"
                             )}
                           </span>
                         </div>
                       )}
 
-                      {cursada?.feedback && (
+                      {entregaEvaluacion.devolucion && (
                         <div className="p-3 bg-muted rounded-lg">
                           <p className="text-sm font-medium mb-1">
                             Devolución del profesor:
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {cursada.feedback}
+                            {entregaEvaluacion.devolucion}
                           </p>
                         </div>
                       )}

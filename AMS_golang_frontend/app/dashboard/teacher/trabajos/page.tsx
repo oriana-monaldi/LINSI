@@ -13,9 +13,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { tpAPI } from "@/lib/api";
-import { FileText, CheckCircle2, Clock, Plus } from "lucide-react";
+import { tpAPI, comisionAPI } from "@/lib/api";
+import { FileText, Plus } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 
@@ -23,6 +22,8 @@ export default function TeacherTrabajosPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const [tps, setTps] = useState<any[]>([]);
+  const [comisiones, setComisiones] = useState<any[]>([]);
+  const [selectedComision, setSelectedComision] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,16 +38,25 @@ export default function TeacherTrabajosPage() {
   useEffect(() => {
     if (user) {
       setLoading(true);
-      tpAPI
-        .getMine()
-        .then((response) => {
-          console.log("TPs response:", response);
-          const tpsList = response.data || response.tps || response || [];
+      Promise.all([
+        tpAPI.getMine(),
+        comisionAPI.getByProfesor()
+      ])
+        .then(([tpsResponse, comisionesResponse]) => {
+          console.log("TPs response:", tpsResponse);
+          const tpsList = tpsResponse.data || tpsResponse.tps || tpsResponse || [];
           setTps(Array.isArray(tpsList) ? tpsList : []);
+
+          const profesorComisiones = comisionesResponse.data || comisionesResponse || [];
+          const comisionesList = Array.isArray(profesorComisiones)
+            ? profesorComisiones.map((pc: any) => pc.comision).filter(Boolean)
+            : [];
+          setComisiones(comisionesList);
         })
         .catch((err) => {
-          console.error("Error loading TPs:", err);
+          console.error("Error loading data:", err);
           setTps([]);
+          setComisiones([]);
         })
         .finally(() => setLoading(false));
     }
@@ -64,8 +74,9 @@ export default function TeacherTrabajosPage() {
     );
   }
 
-  const pendingTPs = tps;
-  const gradedTPs: any[] = [];
+  const filteredTps = selectedComision === "all" 
+    ? tps 
+    : tps.filter(tp => tp.comision_id === parseInt(selectedComision))
 
   const renderTPCard = (tp: any) => {
     const consignaStr = tp.consigna ? String(tp.consigna) : "";
@@ -138,54 +149,53 @@ export default function TeacherTrabajosPage() {
           </Link>
         </div>
 
-        <Tabs defaultValue="pending" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="pending" className="gap-2">
-              <FileText className="h-4 w-4" />
-              Mis Trabajos ({pendingTPs.length})
-            </TabsTrigger>
-            <TabsTrigger value="graded" className="gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              Entregas ({gradedTPs.length})
-            </TabsTrigger>
-          </TabsList>
+        {/* Filtro por comisión */}
+        {comisiones.length > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium">Filtrar por:</span>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={selectedComision === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedComision("all")}
+              >
+                Todas las comisiones
+              </Button>
+              {comisiones.map((comision) => (
+                <Button
+                  key={comision.id}
+                  variant={selectedComision === comision.id.toString() ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedComision(comision.id.toString())}
+                >
+                  {comision.materia?.nombre || 'Materia'} - {comision.nombre}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
 
-          <TabsContent value="pending" className="space-y-4">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              </div>
-            ) : pendingTPs.length > 0 ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                {pendingTPs.map((tp) => renderTPCard(tp))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-lg font-medium">
-                    No hay trabajos prácticos
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Crea un nuevo TP para comenzar
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="graded" className="space-y-4">
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium">Entregas de estudiantes</p>
-                <p className="text-sm text-muted-foreground">
-                  Haz clic en un TP para ver las entregas
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        ) : filteredTps.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {filteredTps.map((tp) => renderTPCard(tp))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-lg font-medium">
+                {selectedComision === "all" ? "No hay trabajos prácticos" : "No hay trabajos prácticos para esta comisión"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Crea un nuevo TP para comenzar
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );

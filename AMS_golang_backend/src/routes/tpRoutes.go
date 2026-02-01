@@ -30,4 +30,11 @@ func SetupTpRoutes(router *gin.Engine, service *services.TpService) {
 	{
 		profesor.GET("/tps", middleware.RequireRole(models.RoleProfesor), tpController.GetMyTps)
 	}
+
+	// Alumno-specific endpoint to get TPs for their comisiones
+	alumno := router.Group("/alumno")
+	alumno.Use(middleware.AuthMiddleware())
+	{
+		alumno.GET("/tps", middleware.RequireRole(models.RoleAlumno), tpController.GetMyTpsAsAlumno)
+	}
 }

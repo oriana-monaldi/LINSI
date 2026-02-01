@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { tpAPI, entregaTPAPI } from "@/lib/api"
-import { ArrowLeft, FileText, Calendar, Users, CheckCircle2, Clock, AlertCircle } from "lucide-react"
+import { ArrowLeft, FileText, Calendar, Users, CheckCircle2, Clock, AlertCircle, Pencil } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import Link from "next/link"
@@ -98,6 +98,12 @@ export default function TPDetailPage() {
               {tp?.comision?.nombre || `Comisión ${tp?.comision_id}`}
             </p>
           </div>
+          <Link href={`/dashboard/teacher/trabajos/${tpId}/editar`}>
+            <Button variant="outline" size="sm">
+              <Pencil className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          </Link>
           {tp?.vigente !== undefined && (
             <Badge variant={tp.vigente ? "default" : "secondary"}>
               {tp.vigente ? "Activo" : "Inactivo"}

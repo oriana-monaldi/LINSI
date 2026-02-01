@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type EvaluacionModel struct {
 	ID              int           `json:"id" gorm:"primaryKey;autoIncrement"`
 	FechaEvaluacion string        `json:"fecha_evaluacion" gorm:"column:fecha_evaluacion;type:date;not null"`
@@ -31,9 +33,20 @@ type EntregaEvaluacion struct {
 	AlumnoId int   `json:"alumno_id" gorm:"not null"`
 	Alumno   Alumno `json:"alumno" gorm:"foreignKey:AlumnoId;references:ID"`
 
-	ArchivoURL   string   `json:"archivo_url" gorm:"type:text"`
-	FechaEntrega string   `json:"fecha_entrega" gorm:"type:timestamp"`
+	ArchivoURL   *string     `json:"archivo_url" gorm:"type:text;default:NULL"`
+	FechaEntrega *time.Time  `json:"fecha_entrega" gorm:"type:timestamp;default:NULL"`
 	Nota         *float64 `json:"nota" gorm:"type:float"`
 	Devolucion   *string  `json:"devolucion" gorm:"type:text"`
 	Observaciones *string `json:"observaciones" gorm:"type:text"`
+}
+
+type EntregaEvaluacionUpdateRequest struct {
+	Nota         *float64 `json:"nota,omitempty"`
+	Devolucion   *string  `json:"devolucion,omitempty"`
+	Observaciones *string `json:"observaciones,omitempty"`
+}
+
+// TableName specifies the table name for EntregaEvaluacion
+func (EntregaEvaluacion) TableName() string {
+	return "entrega_evaluaciones"
 }

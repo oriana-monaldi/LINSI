@@ -24,6 +24,7 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
 export const tpAPI = {
   getAll: () => fetchAPI("/tps/"),
   getMine: () => fetchAPI("/profesor/tps"),
+  getMyAsStudent: () => fetchAPI("/alumno/tps"),
   getById: (id: string) => fetchAPI(`/tps/${id}`),
   create: (data: {
     consigna: string;
@@ -46,7 +47,12 @@ export const tpAPI = {
 export const evaluacionAPI = {
   getAll: () => fetchAPI("/evaluaciones/"),
   getMine: () => fetchAPI("/profesor/evaluaciones"),
+  getMyAsStudent: () => fetchAPI("/alumno/evaluaciones"),
   getById: (id: string) => fetchAPI(`/evaluaciones/${id}`),
+  getEntregas: (evaluacionId: string) =>
+    fetchAPI(`/evaluaciones/${evaluacionId}/entregas`),
+  getEntrega: (evaluacionId: string, alumnoId: string) =>
+    fetchAPI(`/evaluaciones/${evaluacionId}/entregas/${alumnoId}`),
   getByComision: (comisionId: string) =>
     fetchAPI(`/evaluaciones/comision/${comisionId}`),
   create: (data: {
@@ -60,6 +66,11 @@ export const evaluacionAPI = {
     }),
   update: (id: string, data: any) =>
     fetchAPI(`/evaluaciones/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  updateEntrega: (evaluacionId: string, alumnoId: string, data: any) =>
+    fetchAPI(`/evaluaciones/${evaluacionId}/entregas/${alumnoId}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     }),

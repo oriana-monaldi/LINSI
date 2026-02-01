@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { comisionAPI, cursadaAPI, tpAPI, evaluacionAPI } from "@/lib/api";
+import { comisionAPI, cursadaAPI, tpAPI, evaluacionAPI, entregaTPAPI } from "@/lib/api";
 import { Users, TrendingUp, FileText, Calendar, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -26,6 +26,7 @@ export default function TeacherMateriaDetailPage() {
   const [comision, setComision] = useState<any>(null);
   const [cursadas, setCursadas] = useState<any[]>([]);
   const [tps, setTps] = useState<any[]>([]);
+  const [entregas, setEntregas] = useState<any[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,13 +46,15 @@ export default function TeacherMateriaDetailPage() {
         comisionAPI.getById(comisionId),
         cursadaAPI.getByComision(comisionId),
         tpAPI.getAll(),
+        entregaTPAPI.getAll(),
         evaluacionAPI.getByComision(comisionId),
       ])
-        .then(([comisionRes, cursadasRes, tpsRes, evaluacionesRes]) => {
+        .then(([comisionRes, cursadasRes, tpsRes, entregasRes, evaluacionesRes]) => {
           console.log("Comision detail data:", {
             comisionRes,
             cursadasRes,
             tpsRes,
+            entregasRes,
             evaluacionesRes,
           });
 
@@ -67,6 +70,9 @@ export default function TeacherMateriaDetailPage() {
               )
             : [];
           setTps(comisionTps);
+
+          const entregasList = entregasRes.data || entregasRes.entregas || entregasRes || [];
+          setEntregas(Array.isArray(entregasList) ? entregasList : []);
 
           const evaluacionesList =
             evaluacionesRes.data || evaluacionesRes || [];
@@ -119,7 +125,12 @@ export default function TeacherMateriaDetailPage() {
     );
   }
 
-  const pendingGrades = tps.filter((tp) => !tp.nota).length;
+  const comisionTpIds = new Set(tps.map((tp) => Number(tp.id)));
+  const pendingGrades = entregas.filter((entrega) => {
+    const entregaTpId = Number(entrega?.tp_id ?? entrega?.tp?.id ?? entrega?.Tp?.ID);
+    const isComisionTp = Number.isFinite(entregaTpId) && comisionTpIds.has(entregaTpId);
+    return isComisionTp && (entrega?.estado === "pendiente" || entrega?.nota == null);
+  }).length;
 
   return (
     <DashboardLayout>
@@ -253,13 +264,22 @@ export default function TeacherMateriaDetailPage() {
         {/* TPs List */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Trabajos Prácticos
-            </CardTitle>
-            <CardDescription>
-              Trabajos asignados a esta comisión
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Trabajos Prácticos
+                </CardTitle>
+                <CardDescription>
+                  Trabajos asignados a esta comisión
+                </CardDescription>
+              </div>
+              <Link href="/dashboard/teacher/trabajos">
+                <Button variant="outline" size="sm">
+                  Ver Todos
+                </Button>
+              </Link>
+            </div>
           </CardHeader>
           <CardContent>
             {tps.length > 0 ? (
@@ -316,13 +336,22 @@ export default function TeacherMateriaDetailPage() {
         {/* Evaluaciones List */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Evaluaciones
-            </CardTitle>
-            <CardDescription>
-              Evaluaciones programadas para esta comisión
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Evaluaciones
+                </CardTitle>
+                <CardDescription>
+                  Evaluaciones programadas para esta comisión
+                </CardDescription>
+              </div>
+              <Link href="/dashboard/teacher/evaluaciones">
+                <Button variant="outline" size="sm">
+                  Ver Todas
+                </Button>
+              </Link>
+            </div>
           </CardHeader>
           <CardContent>
             {evaluaciones.length > 0 ? (

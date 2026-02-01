@@ -29,6 +29,7 @@ export default function GradeEvaluacionPage() {
 
   const [evaluacion, setEvaluacion] = useState<any>(null)
   const [cursada, setCursada] = useState<any>(null)
+  const [entregaEvaluacion, setEntregaEvaluacion] = useState<any>(null)
   const [nota, setNota] = useState("")
   const [feedback, setFeedback] = useState("")
   const [loading, setLoading] = useState(true)
@@ -42,12 +43,14 @@ export default function GradeEvaluacionPage() {
 
   useEffect(() => {
     if (user && evaluacionId && cursadaId) {
+      setNota("")
+      setFeedback("")
       setLoading(true)
       Promise.all([
         evaluacionAPI.getById(evaluacionId),
         cursadaAPI.getById(cursadaId)
       ])
-        .then(([evalResponse, cursadaResponse]) => {
+        .then(async ([evalResponse, cursadaResponse]) => {
           console.log('Evaluacion and Cursada:', { evalResponse, cursadaResponse })
           const evalData = evalResponse.data || evalResponse
           const cursadaData = cursadaResponse.data || cursadaResponse
@@ -55,12 +58,22 @@ export default function GradeEvaluacionPage() {
           setEvaluacion(evalData)
           setCursada(cursadaData)
 
-          // Si ya tiene nota final, mostrarla
-          if (cursadaData.nota_final) {
-            setNota(cursadaData.nota_final.toString())
-          }
-          if (cursadaData.feedback) {
-            setFeedback(cursadaData.feedback)
+          const alumnoId = cursadaData.alumno_id || cursadaData.alumno?.id
+          if (alumnoId) {
+            try {
+              const entregaResponse = await evaluacionAPI.getEntrega(evaluacionId, String(alumnoId))
+              const entregaData = entregaResponse.data || entregaResponse
+              setEntregaEvaluacion(entregaData)
+              if (entregaData?.nota !== null && entregaData?.nota !== undefined) {
+                setNota(entregaData.nota.toString())
+              }
+              if (entregaData?.devolucion) {
+                setFeedback(entregaData.devolucion)
+              }
+            } catch (err) {
+              console.error('Error loading entrega evaluacion:', err)
+              setEntregaEvaluacion(null)
+            }
           }
         })
         .catch(err => {
@@ -113,9 +126,14 @@ export default function GradeEvaluacionPage() {
         return
       }
 
-      await cursadaAPI.update(cursadaId, {
-        nota_final: notaNum,
-        feedback: feedback.trim() || undefined
+      const alumnoId = cursada?.alumno_id || cursada?.alumno?.id
+      if (!alumnoId) {
+        throw new Error("No se pudo identificar al alumno")
+      }
+
+      await evaluacionAPI.updateEntrega(evaluacionId, String(alumnoId), {
+        nota: notaNum,
+        devolucion: feedback.trim() || undefined
       })
 
       toast({
@@ -164,9 +182,9 @@ export default function GradeEvaluacionPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Información</CardTitle>
-                  {cursada.nota_final && (
+                  {entregaEvaluacion?.nota !== null && entregaEvaluacion?.nota !== undefined && (
                     <Badge className="bg-green-500 hover:bg-green-600">
-                      Calificado: {cursada.nota_final}
+                      Calificado: {entregaEvaluacion.nota}
                     </Badge>
                   )}
                 </div>

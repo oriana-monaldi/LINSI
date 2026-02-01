@@ -104,6 +104,7 @@ func main() {
 		&models.Entrega{},
 		&models.Archivo{},
 		&models.EvaluacionModel{},
+		&models.EntregaEvaluacion{},
 		&models.Anexo{},
 		&models.AnexoArchivo{},
 	); err != nil {

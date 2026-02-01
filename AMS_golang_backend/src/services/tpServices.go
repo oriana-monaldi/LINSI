@@ -53,6 +53,34 @@ func (s *TpService) GetTpsByProfesorID(profesorID int) ([]models.TpModel, error)
 	return tps, nil
 }
 
+// GetTpsByAlumnoID returns TPs for all comisiones that the student is enrolled in
+func (s *TpService) GetTpsByAlumnoID(alumnoID int) ([]models.TpModel, error) {
+	// First get all comision IDs for this alumno
+	var cursadas []models.Cursada
+	if err := s.db.Where("alumno_id = ?", alumnoID).Find(&cursadas).Error; err != nil {
+		return nil, err
+	}
+
+	// Extract comision IDs
+	comisionIDs := make([]int, len(cursadas))
+	for i, cursada := range cursadas {
+		comisionIDs[i] = cursada.ComisionID
+	}
+
+	// If no comisiones, return empty list
+	if len(comisionIDs) == 0 {
+		return []models.TpModel{}, nil
+	}
+
+	// Get TPs for these comisiones
+	var tps []models.TpModel
+	result := s.db.Preload("Comision").Preload("Comision.Materia").Where("comision_id IN ?", comisionIDs).Find(&tps)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return tps, nil
+}
+
 func (s *TpService) GetTpByID(id int) (*models.TpModel, error) {
 	var tp models.TpModel
 	result := s.db.Preload("Comision").First(&tp, id)

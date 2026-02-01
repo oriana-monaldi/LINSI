@@ -7,7 +7,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { evaluacionAPI } from "@/lib/api"
+import { evaluacionAPI, comisionAPI } from "@/lib/api"
 import { Calendar, Plus, CheckCircle2, Clock } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -17,6 +17,8 @@ export default function TeacherEvaluacionesPage() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const [evaluaciones, setEvaluaciones] = useState<any[]>([])
+  const [comisiones, setComisiones] = useState<any[]>([])
+  const [selectedComision, setSelectedComision] = useState<string>("all")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -28,15 +30,25 @@ export default function TeacherEvaluacionesPage() {
   useEffect(() => {
     if (user) {
       setLoading(true)
-      evaluacionAPI.getMine()
-        .then(response => {
-          console.log('Evaluaciones response:', response)
-          const evaluacionesList = response.data || response.evaluaciones || response || []
+      Promise.all([
+        evaluacionAPI.getMine(),
+        comisionAPI.getByProfesor()
+      ])
+        .then(([evaluacionesResponse, comisionesResponse]) => {
+          console.log('Evaluaciones response:', evaluacionesResponse)
+          const evaluacionesList = evaluacionesResponse.data || evaluacionesResponse.evaluaciones || evaluacionesResponse || []
           setEvaluaciones(Array.isArray(evaluacionesList) ? evaluacionesList : [])
+
+          const profesorComisiones = comisionesResponse.data || comisionesResponse || []
+          const comisionesList = Array.isArray(profesorComisiones)
+            ? profesorComisiones.map((pc: any) => pc.comision).filter(Boolean)
+            : []
+          setComisiones(comisionesList)
         })
         .catch(err => {
-          console.error('Error loading evaluaciones:', err)
+          console.error('Error loading data:', err)
           setEvaluaciones([])
+          setComisiones([])
         })
         .finally(() => setLoading(false))
     }
@@ -50,8 +62,12 @@ export default function TeacherEvaluacionesPage() {
     )
   }
 
-  const upcomingEvaluaciones = evaluaciones.filter((ev) => new Date(ev.fecha_evaluacion) > new Date())
-  const pastEvaluaciones = evaluaciones.filter((ev) => new Date(ev.fecha_evaluacion) <= new Date())
+  const filteredEvaluaciones = selectedComision === "all" 
+    ? evaluaciones 
+    : evaluaciones.filter(ev => ev.comision_id === parseInt(selectedComision))
+
+  const upcomingEvaluaciones = filteredEvaluaciones.filter((ev) => new Date(ev.fecha_evaluacion) > new Date())
+  const pastEvaluaciones = filteredEvaluaciones.filter((ev) => new Date(ev.fecha_evaluacion) <= new Date())
 
   return (
     <DashboardLayout>
@@ -68,6 +84,32 @@ export default function TeacherEvaluacionesPage() {
             </Button>
           </Link>
         </div>
+
+        {/* Filtro por comisión */}
+        {comisiones.length > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium">Filtrar por:</span>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={selectedComision === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedComision("all")}
+              >
+                Todas las comisiones
+              </Button>
+              {comisiones.map((comision) => (
+                <Button
+                  key={comision.id}
+                  variant={selectedComision === comision.id.toString() ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedComision(comision.id.toString())}
+                >
+                  {comision.materia?.nombre || 'Materia'} - {comision.nombre}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Upcoming Evaluations */}
         <div className="space-y-4">

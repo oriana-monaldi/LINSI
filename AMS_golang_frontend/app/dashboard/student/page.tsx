@@ -122,9 +122,9 @@ export default function StudentDashboardPage() {
       try {
         const [cursadasData, tpsData, entregasData, evaluacionesData, notificacionesData] = await Promise.all([
           cursadaAPI.getByAlumno(String(user.id)),
-          tpAPI.getMyAsStudent().catch(() => []), // Fallback if endpoint not available
+          tpAPI.getMyAsStudent().catch(() => []),
           entregaTPAPI.getMine(),
-          evaluacionAPI.getMyAsStudent().catch(() => []), // Get student's evaluation submissions
+          evaluacionAPI.getMyAsStudent().catch(() => []),
           notificacionAPI.getByAlumno(String(user.id)),
         ])
 
@@ -179,14 +179,11 @@ export default function StudentDashboardPage() {
     )
   }
 
-  // Create a map of entrega by TP ID for easy lookup
   const entregasByTpId = new Map(entregas.map(e => [e.tp_id, e]))
 
-  // Calculate pending and completed TPs based on entregas
   const pendingEntregas = entregas.filter((e) => e.estado === "pendiente")
   const completedEntregas = entregas.filter((e) => e.estado === "calificado")
   
-  // Get upcoming TPs (both with and without entregas) - for now fallback to entregas if tps is empty
   const upcomingTps = tps && tps.length > 0
     ? tps
         .filter((tp) => new Date(tp.fecha_entrega) > new Date())
@@ -196,7 +193,6 @@ export default function StudentDashboardPage() {
         .filter((e) => e.tp && new Date(e.tp.fecha_entrega) > new Date() && e.estado === "pendiente")
         .slice(0, 3)
 
-  // Calculate average grade including both TPs and evaluations
   const completedTpGrades = completedEntregas.filter((e) => e.nota !== null).map((e) => e.nota!)
   const evaluacionGrades = evaluaciones
     .filter((e) => e.nota !== null && e.nota !== undefined)
@@ -266,7 +262,6 @@ export default function StudentDashboardPage() {
             <CardContent className="space-y-4">
               {upcomingTps.length > 0 ? (
                 upcomingTps.map((item) => {
-                  // Handle both TP and EntregaTP objects
                   const tp = item.tp || item
                   const id = item.id || item.tp_id
                   const consigna = item.consigna || item.tp?.consigna

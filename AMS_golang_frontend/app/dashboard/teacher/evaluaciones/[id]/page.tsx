@@ -50,7 +50,6 @@ export default function EvaluacionDetailPage() {
             setEntregasEvaluacion([])
           }
 
-          // Obtener las cursadas de la comisión
           if (evalData.comision_id) {
             try {
               const cursadasResponse = await cursadaAPI.getByComision(evalData.comision_id.toString())
@@ -96,7 +95,6 @@ export default function EvaluacionDetailPage() {
     )
   }
 
-  // Para evaluaciones, mostramos todos los estudiantes de la cursada
   const entregasByAlumno = new Map(entregasEvaluacion.map((e) => [e.alumno_id, e]))
   const totalCount = cursadas.length
   const gradedCount = entregasEvaluacion.filter((e) => e.nota !== null && e.nota !== undefined).length

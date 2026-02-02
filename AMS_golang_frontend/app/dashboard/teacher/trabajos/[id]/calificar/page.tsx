@@ -135,7 +135,6 @@ export default function CalificarTPPage() {
           </div>
         </div>
 
-        {/* Student and TP Info */}
         <Card>
           <CardHeader>
             <CardTitle>Información del Trabajo</CardTitle>
@@ -174,7 +173,6 @@ export default function CalificarTPPage() {
           </CardContent>
         </Card>
 
-        {/* Grading Form */}
         <Card>
           <CardHeader>
             <CardTitle>Calificación</CardTitle>

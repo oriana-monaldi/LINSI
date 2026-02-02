@@ -135,7 +135,6 @@ export default function TeacherMateriaDetailPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-4">
           <Link href="/dashboard/teacher">
             <Button variant="ghost" size="icon">
@@ -152,7 +151,6 @@ export default function TeacherMateriaDetailPage() {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -201,7 +199,6 @@ export default function TeacherMateriaDetailPage() {
           </Card>
         </div>
 
-        {/* Students List */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -261,7 +258,6 @@ export default function TeacherMateriaDetailPage() {
           </CardContent>
         </Card>
 
-        {/* TPs List */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -333,7 +329,6 @@ export default function TeacherMateriaDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Evaluaciones List */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">

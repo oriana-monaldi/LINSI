@@ -85,7 +85,6 @@ export default function TeacherEvaluacionesPage() {
           </Link>
         </div>
 
-        {/* Filtro por comisión */}
         {comisiones.length > 0 && (
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium">Filtrar por:</span>
@@ -111,7 +110,6 @@ export default function TeacherEvaluacionesPage() {
           </div>
         )}
 
-        {/* Upcoming Evaluations */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -160,7 +158,6 @@ export default function TeacherEvaluacionesPage() {
           )}
         </div>
 
-        {/* Past Evaluations */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5" />

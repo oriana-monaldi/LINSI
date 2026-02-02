@@ -144,7 +144,6 @@ export default function TPDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Submissions Overview */}
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -177,7 +176,6 @@ export default function TPDetailPage() {
               </Card>
             </div>
 
-            {/* Student Submissions List */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

@@ -141,7 +141,6 @@ export default function GradeEntregaPage() {
           </Card>
         ) : (
           <>
-            {/* Student and Submission Info */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">

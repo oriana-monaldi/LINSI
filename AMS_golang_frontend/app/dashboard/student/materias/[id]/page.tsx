@@ -154,7 +154,6 @@ export default function MateriaDetailPage() {
           );
           setTps(tpsForComision);
 
-          // Obtener evaluaciones del alumno y filtrar por comisión
           try {
             console.log("Fetching evaluaciones for student in comision:", foundCursada.comision.id);
             const evaluacionesData = await evaluacionAPI.getMyAsStudent().catch((err) => {
@@ -166,7 +165,6 @@ export default function MateriaDetailPage() {
             console.log("Evaluaciones list after parsing:", evalList);
             console.log("Filtering by comision_id:", foundCursada.comision.id);
             
-            // Filter evaluaciones by comision
             const evalForComision = evalList.filter((e: EntregaEvaluacion) => {
               console.log("Checking entrega:", e.id, "evaluacion?.comision_id:", e.evaluacion?.comision_id, "foundCursada.comision.id:", foundCursada.comision.id);
               return e.evaluacion?.comision_id === foundCursada.comision.id;

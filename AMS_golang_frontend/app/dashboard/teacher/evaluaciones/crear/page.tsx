@@ -64,9 +64,8 @@ export default function CrearEvaluacionPage() {
     setLoading(true)
 
     try {
-      // Format dates as YYYY-MM-DD
-      const fechaFormatted = fecha // Already in YYYY-MM-DD format from input
-      const fechaDevolucionFormatted = fechaDevolucion // Already in YYYY-MM-DD format from input
+      const fechaFormatted = fecha
+      const fechaDevolucionFormatted = fechaDevolucion
 
       console.log("Creating evaluation with data:", {
         temas,
@@ -87,7 +86,6 @@ export default function CrearEvaluacionPage() {
         description: "La evaluación ha sido programada.",
       })
 
-      // Redirect to teacher dashboard after creation
       router.push("/dashboard/teacher")
     } catch (error: any) {
       console.error("Error creating evaluation:", error)

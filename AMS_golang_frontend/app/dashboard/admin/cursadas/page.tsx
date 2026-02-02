@@ -178,7 +178,6 @@ function CursadasContent() {
           </div>
         )}
 
-        {/* Filters */}
         <Card>
           <CardHeader>
             <CardTitle>Buscar Cursadas</CardTitle>
@@ -210,7 +209,6 @@ function CursadasContent() {
           </CardContent>
         </Card>
 
-        {/* Cursadas List */}
         <Card>
           <CardHeader>
             <CardTitle>Cursadas ({filteredCursadas.length})</CardTitle>

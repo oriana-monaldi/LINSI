@@ -177,7 +177,6 @@ export default function GradeEvaluacionPage() {
           </Card>
         ) : (
           <>
-            {/* Student and Evaluation Info */}
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -230,7 +229,6 @@ export default function GradeEvaluacionPage() {
               </CardContent>
             </Card>
 
-            {/* Grading Form */}
             <Card>
               <CardHeader>
                 <CardTitle>Calificación</CardTitle>

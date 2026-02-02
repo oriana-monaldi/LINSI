@@ -1,117 +1,127 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
-import { DashboardLayout } from "@/components/dashboard-layout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { evaluacionAPI } from "@/lib/api"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import { useToast } from "@/hooks/use-toast"
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { DashboardLayout } from "@/components/dashboard-layout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { evaluacionAPI } from "@/lib/api";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EditEvaluacionPage() {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
-  const params = useParams()
-  const { toast } = useToast()
-  const evaluacionId = params.id as string
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const params = useParams();
+  const { toast } = useToast();
+  const evaluacionId = params.id as string;
 
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     temas: "",
-    fecha_evaluacion: ""
-  })
+    fecha_evaluacion: "",
+  });
 
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== "teacher" && user.role !== "profesor")) {
-      router.push("/")
+    if (
+      !isLoading &&
+      (!user || (user.role !== "teacher" && user.role !== "profesor"))
+    ) {
+      router.push("/");
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     if (user && evaluacionId) {
-      setLoading(true)
-      evaluacionAPI.getById(evaluacionId)
+      setLoading(true);
+      evaluacionAPI
+        .getById(evaluacionId)
         .then((response) => {
-          const evaluacionData = response.data || response
+          const evaluacionData = response.data || response;
           setFormData({
             temas: evaluacionData.temas || "",
-            fecha_evaluacion: evaluacionData.fecha_evaluacion ? evaluacionData.fecha_evaluacion.split('T')[0] : ""
-          })
+            fecha_evaluacion: evaluacionData.fecha_evaluacion
+              ? evaluacionData.fecha_evaluacion.split("T")[0]
+              : "",
+          });
         })
-        .catch(err => {
-          console.error('Error loading evaluacion:', err)
+        .catch((err) => {
+          console.error("Error loading evaluacion:", err);
           toast({
             title: "Error",
             description: "No se pudo cargar la evaluación",
-            variant: "destructive"
-          })
+            variant: "destructive",
+          });
         })
-        .finally(() => setLoading(false))
+        .finally(() => setLoading(false));
     }
-  }, [user, evaluacionId, toast])
+  }, [user, evaluacionId, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!formData.temas.trim()) {
       toast({
         title: "Error",
         description: "Los temas son obligatorios",
-        variant: "destructive"
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
 
     if (!formData.fecha_evaluacion) {
       toast({
         title: "Error",
         description: "La fecha de evaluación es obligatoria",
-        variant: "destructive"
-      })
-      return
+        variant: "destructive",
+      });
+      return;
     }
 
-    setSubmitting(true)
+    setSubmitting(true);
 
     try {
       const updateData: any = {
         temas: formData.temas.trim(),
-        fecha_evaluacion: new Date(formData.fecha_evaluacion).toISOString()
-      }
+        fecha_evaluacion: new Date(formData.fecha_evaluacion).toISOString(),
+      };
 
-      await evaluacionAPI.update(evaluacionId, updateData)
-      
+      await evaluacionAPI.update(evaluacionId, updateData);
+
       toast({
         title: "Éxito",
-        description: "Evaluación actualizada correctamente"
-      })
+        description: "Evaluación actualizada correctamente",
+      });
 
-      router.push(`/dashboard/teacher/evaluaciones/${evaluacionId}`)
+      router.push(`/dashboard/teacher/evaluaciones/${evaluacionId}`);
     } catch (error: any) {
-      console.error('Error updating evaluacion:', error)
+      console.error("Error updating evaluacion:", error);
       toast({
         title: "Error",
         description: error.message || "No se pudo actualizar la evaluación",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
-  if (isLoading || !user || user.role !== "teacher" && user.role !== "profesor") {
+  if (
+    isLoading ||
+    !user ||
+    (user.role !== "teacher" && user.role !== "profesor")
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -146,7 +156,9 @@ export default function EditEvaluacionPage() {
                   <Textarea
                     id="temas"
                     value={formData.temas}
-                    onChange={(e) => setFormData({ ...formData, temas: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, temas: e.target.value })
+                    }
                     placeholder="Describe los temas que se evaluarán..."
                     rows={8}
                     required
@@ -154,12 +166,19 @@ export default function EditEvaluacionPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="fecha_evaluacion">Fecha de Evaluación *</Label>
+                  <Label htmlFor="fecha_evaluacion">
+                    Fecha de Evaluación *
+                  </Label>
                   <Input
                     id="fecha_evaluacion"
                     type="date"
                     value={formData.fecha_evaluacion}
-                    onChange={(e) => setFormData({ ...formData, fecha_evaluacion: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        fecha_evaluacion: e.target.value,
+                      })
+                    }
                     required
                   />
                 </div>
@@ -168,7 +187,9 @@ export default function EditEvaluacionPage() {
                   <Button type="submit" disabled={submitting}>
                     {submitting ? "Guardando..." : "Guardar Cambios"}
                   </Button>
-                  <Link href={`/dashboard/teacher/evaluaciones/${evaluacionId}`}>
+                  <Link
+                    href={`/dashboard/teacher/evaluaciones/${evaluacionId}`}
+                  >
                     <Button type="button" variant="outline">
                       Cancelar
                     </Button>
@@ -180,5 +201,5 @@ export default function EditEvaluacionPage() {
         )}
       </div>
     </DashboardLayout>
-  )
+  );
 }

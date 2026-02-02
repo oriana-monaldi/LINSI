@@ -13,14 +13,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/lib/auth-context"
 import { GraduationCap } from "lucide-react"
 
-/* ----------------------------------------------------------
- * Formulario de Login
- *  - Email y contraseña
- *  - Validaciones básicas
- *  - Inicio de sesión con el contexto de autenticación
- *  - Redirección tras login exitoso
- * ----------------------------------------------------------
- */
 export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -29,13 +21,6 @@ export function LoginForm() {
   const { login } = useAuth()
   const router = useRouter()
 
-  /* ----------------------------------------------------------
-   *  envío del formulario
-   * - Previene recarga
-   * - Valida campos básicos
-   * - Ejecuta login() del contexto
-   * ----------------------------------------------------------
-   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
@@ -58,9 +43,6 @@ export function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4">
       <Card className="w-full max-w-md shadow-lg">
 
-        {/* ------------------------------------------------------
-          Encabezado del formulario: ícono, título y subtítulo
-        ------------------------------------------------------- */}
         <CardHeader className="space-y-3 text-center">
           <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
             <GraduationCap className="w-7 h-7 text-primary-foreground" />
@@ -70,13 +52,9 @@ export function LoginForm() {
           <CardDescription>Ingrese sus credenciales para acceder al sistema</CardDescription>
         </CardHeader>
 
-        {/* ------------------------------------------------------
-          Cuerpo: formulario de login
-        ------------------------------------------------------- */}
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
 
-            {/* Campo: Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -90,7 +68,6 @@ export function LoginForm() {
               />
             </div>
 
-            {/* Campo: Contraseña */}
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
               <Input
@@ -103,22 +80,17 @@ export function LoginForm() {
               />
             </div>
 
-            {/* Alertas de error */}
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
 
-            {/* Botón enviar */}
             <Button type="submit" className="w-full">
               Iniciar Sesión
             </Button>
           </form>
 
-          {/* ------------------------------------------------------
-            Credenciales de prueba (solo para entorno demo)
-          ------------------------------------------------------- */}
           <div className="mt-6 p-4 bg-muted rounded-lg space-y-2 text-sm">
             <p className="font-semibold text-center mb-3">Credenciales de prueba:</p>
 

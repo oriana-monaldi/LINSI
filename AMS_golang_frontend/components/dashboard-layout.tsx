@@ -25,23 +25,10 @@ import { GraduationCap, Bell, LogOut, CheckCheck } from "lucide-react"
 
 import { notificacionAPI } from "@/lib/api"
 
-/* ----------------------------------------------
- * Props del Layout del Dashboard
- * ------------------------------------------------
- */
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-/* ----------------------------------------------
- * Componente principal del Dashboard
- * Administra:
- *  - Header con info del usuario
- *  - Notificaciones
- *  - Logout
- *  - Wrapper para el contenido interior
- * ------------------------------------------------
- */
 interface Notificacion {
   id: number
   mensaje: string
@@ -57,10 +44,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
 
-  /* ----------------------------------------------
-   * Fetch notifications for students
-   * ----------------------------------------------
-   */
   useEffect(() => {
     async function fetchNotifications() {
       if (!user?.id || (user.role !== "student" && user.role !== "alumno")) return
@@ -80,10 +63,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return () => clearInterval(interval)
   }, [user])
 
-  /* ----------------------------------------------
-   * Mark notification as read
-   * ----------------------------------------------
-   */
   const handleMarkAsRead = async (id: number) => {
     try {
       await notificacionAPI.markAsRead(String(id))
@@ -96,19 +75,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }
 
-  /* ----------------------------------------------
-   * Cerrar sesión y redirigir a Home
-   * ----------------------------------------------
-   */
   const handleLogout = () => {
     logout()
     router.push("/")
   }
 
-  /* ----------------------------------------------
-   * Iniciales del usuario para el Avatar
-   * ----------------------------------------------
-   */
   const getInitials = () => {
     if (!user) return "U"
     const first = user.nombre?.[0] ?? ""
@@ -116,10 +87,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return `${first}${last}`.toUpperCase()
   }
 
-  /* ----------------------------------------------
-   * Traducción del rol a una etiqueta legible
-   * ----------------------------------------------
-   */
   const getRoleLabel = () => {
     switch (user?.role) {
       case "student":
@@ -135,13 +102,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ----------------------------------------------------------
-        Header del sistema: título + avatar + menú de usuario
-      ---------------------------------------------------------- */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           
-          {/* Lado izquierdo: ícono + título + rol (clicable: va al inicio para todos los roles) */}
           <Link href="/" className="flex items-center gap-3 pl-6 cursor-pointer">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <GraduationCap className="w-6 h-6 text-primary-foreground" />
@@ -152,10 +115,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </Link>
 
-          {/* Lado derecho: notificaciones + avatar + menú */}
           <div className="flex items-center gap-4">
             
-            {/* Notificaciones → solo estudiantes */}
             {(user?.role === "student" || user?.role === "alumno") && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -229,7 +190,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </DropdownMenu>
             )}
 
-            {/* Menú del usuario */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 gap-2">
@@ -237,7 +197,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     <AvatarFallback>{getInitials()}</AvatarFallback>
                   </Avatar>
 
-                  {/* Nombre visible solo en pantallas medianas+ */}
                   <span className="hidden sm:inline-block">
                     {user?.nombre} {user?.apellido}
                   </span>
@@ -246,7 +205,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
               <DropdownMenuContent align="end" className="w-56">
                 
-                {/* Información del usuario */}
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
@@ -258,7 +216,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                 <DropdownMenuSeparator />
 
-                {/* Botón de logout */}
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Cerrar Sesión</span>
@@ -271,9 +228,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </header>
 
-      {/* ----------------------------------------------------------
-        Contenido principal del dashboard
-      ---------------------------------------------------------- */}
       <main className="py-6">
         <div className="w-full max-w-5xl mx-auto px-6">{children}</div>
       </main>

@@ -331,3 +331,26 @@ export const adminAPI = {
     }),
   delete: (id: string) => fetchAPI(`/admins/${id}`, { method: "DELETE" }),
 };
+
+export const competenciaAPI = {
+  getAll: () => fetchAPI("/competencias/"),
+  getById: (id: string) => fetchAPI(`/competencias/${id}`),
+  getByComision: (comisionId: string) =>
+    fetchAPI(`/competencias/comision/${comisionId}`),
+  create: (data: { nombre: string; descripcion: string; tp_id: number }) =>
+    fetchAPI(`/competencias/`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  createForComision: (comisionId: string, data: { nombre: string; descripcion: string }) =>
+    fetchAPI(`/competencias/comision/${comisionId}`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: { nombre?: string; descripcion?: string }) =>
+    fetchAPI(`/competencias/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) => fetchAPI(`/competencias/${id}`, { method: "DELETE" }),
+};

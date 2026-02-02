@@ -41,6 +41,21 @@ func (c *CompetenciaController) GetCompetenciaByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, competencia)
 }
 
+func (c *CompetenciaController) GetCompetenciasByComisionID(ctx *gin.Context) {
+	comisionID, err := strconv.Atoi(ctx.Param("comisionId"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid comision ID"})
+		return
+	}
+
+	competencias, err := c.competenciaService.GetCompetenciasByComisionID(comisionID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, competencias)
+}
+
 func (c *CompetenciaController) CreateCompetencia(ctx *gin.Context) {
 	var competencia models.Competencia
 	if err := ctx.ShouldBindJSON(&competencia); err != nil {
@@ -49,6 +64,34 @@ func (c *CompetenciaController) CreateCompetencia(ctx *gin.Context) {
 	}
 
 	if err := c.competenciaService.CreateCompetencia(&competencia); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusCreated, competencia)
+}
+
+func (c *CompetenciaController) CreateCompetenciaForComision(ctx *gin.Context) {
+	comisionID, err := strconv.Atoi(ctx.Param("comisionId"))
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid comision ID"})
+		return
+	}
+
+	var payload struct {
+		Nombre      string `json:"nombre"`
+		Descripcion string `json:"descripcion"`
+	}
+	if err := ctx.ShouldBindJSON(&payload); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if payload.Nombre == "" {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "El nombre es obligatorio"})
+		return
+	}
+
+	competencia, err := c.competenciaService.CreateCompetenciaForComision(comisionID, payload.Nombre, payload.Descripcion)
+	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

@@ -16,8 +16,10 @@ func SetupCompetenciaRoutes(router *gin.Engine, service *services.CompetenciaSer
 
 	competenciasGroup.GET("/", middleware.RequireRole(models.RoleProfesor, models.RoleAlumno, models.RoleAdmin), competenciaController.GetAllCompetencias)
 	competenciasGroup.GET("/:id", middleware.RequireRole(models.RoleProfesor, models.RoleAlumno, models.RoleAdmin), competenciaController.GetCompetenciaByID)
+	competenciasGroup.GET("/comision/:comisionId", middleware.RequireRole(models.RoleProfesor, models.RoleAlumno, models.RoleAdmin), competenciaController.GetCompetenciasByComisionID)
 
 	competenciasGroup.POST("/", middleware.RequireRole(models.RoleProfesor, models.RoleAdmin), competenciaController.CreateCompetencia)
+	competenciasGroup.POST("/comision/:comisionId", middleware.RequireRole(models.RoleProfesor, models.RoleAdmin), competenciaController.CreateCompetenciaForComision)
 	competenciasGroup.PATCH("/:id", middleware.RequireRole(models.RoleProfesor, models.RoleAdmin), competenciaController.UpdateCompetencia)
 
 	competenciasGroup.DELETE("/:id", middleware.RequireRole(models.RoleAdmin), competenciaController.DeleteCompetencia)

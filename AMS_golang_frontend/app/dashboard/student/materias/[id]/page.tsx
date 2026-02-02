@@ -15,7 +15,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cursadaAPI, entregaTPAPI, tpAPI, evaluacionAPI } from "@/lib/api";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { cursadaAPI, entregaTPAPI, tpAPI, evaluacionAPI, competenciaAPI } from "@/lib/api";
 import {
   BookOpen,
   Award,
@@ -107,6 +109,10 @@ export default function MateriaDetailPage() {
   const [entregas, setEntregas] = useState<EntregaTP[]>([]);
   const [tps, setTps] = useState<TP[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<EntregaEvaluacion[]>([]);
+  const [competencias, setCompetencias] = useState<any[]>([]);
+  const [alumnoFeedback, setAlumnoFeedback] = useState("");
+  const [profesorFeedback, setProfesorFeedback] = useState("");
+  const [savingFeedback, setSavingFeedback] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<
     Record<number, File | null>
   >({});
@@ -131,12 +137,31 @@ export default function MateriaDetailPage() {
       setError(null);
 
       try {
-        const [cursadasData, entregasData] = await Promise.all([
-          cursadaAPI.getByAlumno(String(user.id)),
-          entregaTPAPI.getMine(),
-        ]);
+        const [cursadasResult, entregasResult, tpsResult] =
+          await Promise.allSettled([
+            cursadaAPI.getByAlumno(String(user.id)),
+            entregaTPAPI.getMine(),
+            tpAPI.getAll(),
+          ]);
 
-        const tpsData = await tpAPI.getAll();
+        if (cursadasResult.status === "rejected") {
+          console.error("Error fetching cursadas:", cursadasResult.reason);
+          setError("No se pudieron cargar las cursadas");
+          return;
+        }
+
+        if (entregasResult.status === "rejected") {
+          console.error("Error fetching entregas:", entregasResult.reason);
+          setError("No se pudieron cargar las entregas");
+          return;
+        }
+
+        const cursadasData =
+          cursadasResult.status === "fulfilled" ? cursadasResult.value : [];
+        const entregasData =
+          entregasResult.status === "fulfilled" ? entregasResult.value : [];
+        const tpsData =
+          tpsResult.status === "fulfilled" ? tpsResult.value : [];
 
         const foundCursada = (cursadasData || []).find(
           (c: Cursada) => c.id === Number(cursadaId)
@@ -153,6 +178,17 @@ export default function MateriaDetailPage() {
             (t) => t.comision_id === foundCursada.comision.id
           );
           setTps(tpsForComision);
+
+          const tpIds = new Set(tpsForComision.map((tp) => tp.id));
+          const allCompetencias = await competenciaAPI.getAll().catch((err) => {
+            console.error("Error loading competencias:", err);
+            return null;
+          });
+          const allList = allCompetencias?.data || allCompetencias || [];
+          const filtered = Array.isArray(allList)
+            ? allList.filter((c: any) => tpIds.has(c.tp_id))
+            : [];
+          setCompetencias(filtered);
 
           try {
             console.log("Fetching evaluaciones for student in comision:", foundCursada.comision.id);
@@ -178,6 +214,7 @@ export default function MateriaDetailPage() {
         } else {
           setTps([]);
           setEvaluaciones([]);
+          setCompetencias([]);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -190,9 +227,35 @@ export default function MateriaDetailPage() {
     }
 
     if (user && (user.role === "student" || user.role === "alumno")) {
-      fetchData();
+      fetchData().catch((err) => {
+        console.error("Error fetching data (unhandled):", err);
+        setError(
+          err instanceof Error ? err.message : "Error al cargar los datos",
+        );
+        setDataLoading(false);
+      });
     }
   }, [user, cursadaId]);
+
+  const parseFeedback = (value?: string | null) => {
+    if (!value) return { alumno: "", profesor: "" };
+    try {
+      const parsed = JSON.parse(value);
+      return {
+        alumno: parsed?.alumno || "",
+        profesor: parsed?.profesor || "",
+      };
+    } catch {
+      return { alumno: value, profesor: "" };
+    }
+  };
+
+  useEffect(() => {
+    if (!cursada) return;
+    const feedbackParsed = parseFeedback(cursada.feedback);
+    setAlumnoFeedback(feedbackParsed.alumno);
+    setProfesorFeedback(feedbackParsed.profesor);
+  }, [cursada]);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -367,6 +430,87 @@ export default function MateriaDetailPage() {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Feedback</CardTitle>
+            <CardDescription>Intercambio de feedback con el profesor</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="feedback-alumno">Tu feedback para el profesor</Label>
+              <Textarea
+                id="feedback-alumno"
+                value={alumnoFeedback}
+                onChange={(e) => setAlumnoFeedback(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <Button
+              onClick={async () => {
+                setSavingFeedback(true);
+                try {
+                  const updated = await cursadaAPI.update(String(cursada.id), {
+                    feedback: JSON.stringify({
+                      alumno: alumnoFeedback,
+                      profesor: profesorFeedback,
+                    }),
+                  });
+                  const updatedData = updated?.data || updated;
+                  setCursada(updatedData || cursada);
+                  toast({
+                    title: "Feedback guardado",
+                    description: "Tu feedback fue enviado correctamente",
+                  });
+                } catch (err: any) {
+                  console.error("Error saving feedback:", err);
+                  toast({
+                    title: "Error",
+                    description: err?.message || "No se pudo guardar el feedback",
+                    variant: "destructive",
+                  });
+                } finally {
+                  setSavingFeedback(false);
+                }
+              }}
+              disabled={savingFeedback}
+            >
+              {savingFeedback ? "Guardando..." : "Guardar Feedback"}
+            </Button>
+
+            {profesorFeedback && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium mb-1">Feedback del profesor:</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {profesorFeedback}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Competencias</CardTitle>
+            <CardDescription>Listado de competencias de la materia</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {competencias.length > 0 ? (
+              <div className="space-y-3">
+                {competencias.map((competencia) => (
+                  <div key={competencia.id} className="border rounded-lg p-4">
+                    <p className="font-medium">{competencia.nombre}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {competencia.descripcion || "Sin descripción"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No hay competencias cargadas.</p>
+            )}
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="trabajos" className="space-y-4">
           <TabsList>

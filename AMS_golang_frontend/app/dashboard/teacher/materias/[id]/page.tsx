@@ -12,7 +12,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { comisionAPI, cursadaAPI, tpAPI, evaluacionAPI, entregaTPAPI } from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { comisionAPI, cursadaAPI, tpAPI, evaluacionAPI, entregaTPAPI, competenciaAPI } from "@/lib/api";
 import { Users, TrendingUp, FileText, Calendar, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -28,6 +31,16 @@ export default function TeacherMateriaDetailPage() {
   const [tps, setTps] = useState<any[]>([]);
   const [entregas, setEntregas] = useState<any[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<any[]>([]);
+  const [competencias, setCompetencias] = useState<any[]>([]);
+  const [creatingCompetencia, setCreatingCompetencia] = useState(false);
+  const [competenciaNombre, setCompetenciaNombre] = useState("");
+  const [competenciaDescripcion, setCompetenciaDescripcion] = useState("");
+  const [editingCompetenciaId, setEditingCompetenciaId] = useState<number | null>(null);
+  const [editingNombre, setEditingNombre] = useState("");
+  const [editingDescripcion, setEditingDescripcion] = useState("");
+  const [profesorFeedbacks, setProfesorFeedbacks] = useState<Record<number, string>>({});
+  const [savingFeedbackIds, setSavingFeedbackIds] = useState<Record<number, boolean>>({});
+  const [expandedFeedbackId, setExpandedFeedbackId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,14 +61,16 @@ export default function TeacherMateriaDetailPage() {
         tpAPI.getAll(),
         entregaTPAPI.getAll(),
         evaluacionAPI.getByComision(comisionId),
+        competenciaAPI.getByComision(comisionId).catch(() => []),
       ])
-        .then(([comisionRes, cursadasRes, tpsRes, entregasRes, evaluacionesRes]) => {
+        .then(([comisionRes, cursadasRes, tpsRes, entregasRes, evaluacionesRes, competenciasRes]) => {
           console.log("Comision detail data:", {
             comisionRes,
             cursadasRes,
             tpsRes,
             entregasRes,
             evaluacionesRes,
+            competenciasRes,
           });
 
           setComision(comisionRes);
@@ -79,6 +94,9 @@ export default function TeacherMateriaDetailPage() {
           setEvaluaciones(
             Array.isArray(evaluacionesList) ? evaluacionesList : [],
           );
+
+          const competenciasList = competenciasRes.data || competenciasRes || [];
+          setCompetencias(Array.isArray(competenciasList) ? competenciasList : []);
         })
         .catch((err) => {
           console.error("Error loading comision data:", err);
@@ -86,6 +104,48 @@ export default function TeacherMateriaDetailPage() {
         .finally(() => setLoading(false));
     }
   }, [user, comisionId]);
+
+  const parseFeedback = (value?: string | null) => {
+    if (!value) return { alumno: "", profesor: "" };
+    try {
+      const parsed = JSON.parse(value);
+      return {
+        alumno: parsed?.alumno || "",
+        profesor: parsed?.profesor || "",
+      };
+    } catch {
+      return { alumno: value, profesor: "" };
+    }
+  };
+
+  useEffect(() => {
+    const nextFeedbacks: Record<number, string> = {};
+    cursadas.forEach((cursada) => {
+      const parsed = parseFeedback(cursada.feedback);
+      if (cursada?.id != null) {
+        nextFeedbacks[cursada.id] = parsed.profesor || "";
+      }
+    });
+    setProfesorFeedbacks(nextFeedbacks);
+  }, [cursadas]);
+
+  const handleSaveFeedback = async (cursada: any) => {
+    const parsed = parseFeedback(cursada.feedback);
+    const draft = (profesorFeedbacks[cursada.id] || "").trim();
+    setSavingFeedbackIds((prev) => ({ ...prev, [cursada.id]: true }));
+    try {
+      const updated = await cursadaAPI.update(String(cursada.id), {
+        feedback: JSON.stringify({ alumno: parsed.alumno || "", profesor: draft }),
+      });
+      const updatedItem = updated?.data || updated;
+      setCursadas((prev) => prev.map((c) => (c.id === cursada.id ? updatedItem : c)));
+      setProfesorFeedbacks((prev) => ({ ...prev, [cursada.id]: draft }));
+    } catch (err) {
+      console.error("Error saving feedback:", err);
+    } finally {
+      setSavingFeedbackIds((prev) => ({ ...prev, [cursada.id]: false }));
+    }
+  };
 
   if (
     isLoading ||
@@ -131,6 +191,54 @@ export default function TeacherMateriaDetailPage() {
     const isComisionTp = Number.isFinite(entregaTpId) && comisionTpIds.has(entregaTpId);
     return isComisionTp && (entrega?.estado === "pendiente" || entrega?.nota == null);
   }).length;
+
+  const handleCreateCompetencia = async () => {
+    if (!competenciaNombre.trim()) return;
+    const tpId = tps[0]?.id;
+    if (!tpId) {
+      console.error("No hay TPs para asociar la competencia en esta comisión");
+      return;
+    }
+    setCreatingCompetencia(true);
+    try {
+      const created = await competenciaAPI.create({
+        nombre: competenciaNombre.trim(),
+        descripcion: competenciaDescripcion.trim(),
+        tp_id: Number(tpId),
+      });
+      const newItem = created?.data || created;
+      setCompetencias((prev) => [...prev, newItem]);
+      setCompetenciaNombre("");
+      setCompetenciaDescripcion("");
+    } catch (err) {
+      console.error("Error creating competencia:", err);
+    } finally {
+      setCreatingCompetencia(false);
+    }
+  };
+
+  const handleEditCompetencia = (competencia: any) => {
+    setEditingCompetenciaId(competencia.id);
+    setEditingNombre(competencia.nombre || "");
+    setEditingDescripcion(competencia.descripcion || "");
+  };
+
+  const handleSaveCompetencia = async (id: number) => {
+    if (!editingNombre.trim()) return;
+    try {
+      const updated = await competenciaAPI.update(String(id), {
+        nombre: editingNombre.trim(),
+        descripcion: editingDescripcion.trim(),
+      });
+      const updatedItem = updated?.data || updated;
+      setCompetencias((prev) => prev.map((c) => (c.id === id ? updatedItem : c)));
+      setEditingCompetenciaId(null);
+      setEditingNombre("");
+      setEditingDescripcion("");
+    } catch (err) {
+      console.error("Error updating competencia:", err);
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -254,6 +362,168 @@ export default function TeacherMateriaDetailPage() {
               <p className="text-sm text-muted-foreground text-center py-8">
                 No hay estudiantes inscriptos
               </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Feedback de cursada</CardTitle>
+            <CardDescription>
+              Comentarios generales entre estudiantes y profesor
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {cursadas.length > 0 ? (
+              <div className="space-y-4">
+                {cursadas.map((cursada) => {
+                  const parsed = parseFeedback(cursada.feedback);
+                  const draft = profesorFeedbacks[cursada.id] ?? parsed.profesor ?? "";
+                  const isExpanded = expandedFeedbackId === cursada.id;
+                  return (
+                    <div key={cursada.id} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="font-medium">
+                            {cursada.alumno?.nombre} {cursada.alumno?.apellido}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Legajo: {cursada.alumno?.legajo}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setExpandedFeedbackId(isExpanded ? null : cursada.id)
+                          }
+                        >
+                          {isExpanded ? "Ocultar" : "Ver feedback"}
+                        </Button>
+                      </div>
+                      {isExpanded ? (
+                        <>
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">
+                              Feedback general del alumno
+                            </p>
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                              {parsed.alumno || "Sin feedback"}
+                            </p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Feedback general del profesor</Label>
+                            <Textarea
+                              value={draft}
+                              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                                setProfesorFeedbacks((prev) => ({
+                                  ...prev,
+                                  [cursada.id]: e.target.value,
+                                }))
+                              }
+                              rows={3}
+                            />
+                          </div>
+                          <div className="flex justify-end">
+                            <Button
+                              onClick={() => handleSaveFeedback(cursada)}
+                              disabled={savingFeedbackIds[cursada.id]}
+                            >
+                              {savingFeedbackIds[cursada.id] ? "Guardando..." : "Guardar"}
+                            </Button>
+                          </div>
+                        </>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No hay estudiantes inscriptos
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Competencias</CardTitle>
+            <CardDescription>Competencias asociadas a esta materia</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="competencia-nombre">Nombre</Label>
+              <Input
+                id="competencia-nombre"
+                value={competenciaNombre}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCompetenciaNombre(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="competencia-descripcion">Descripción</Label>
+              <Textarea
+                id="competencia-descripcion"
+                value={competenciaDescripcion}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCompetenciaDescripcion(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <Button onClick={handleCreateCompetencia} disabled={creatingCompetencia}>
+              {creatingCompetencia ? "Guardando..." : "Agregar Competencia"}
+            </Button>
+
+            {competencias.length > 0 ? (
+              <div className="space-y-3">
+                {competencias.map((competencia) => (
+                  <div
+                    key={competencia.id}
+                    className="border rounded-lg p-4 space-y-3"
+                  >
+                    {editingCompetenciaId === competencia.id ? (
+                      <>
+                        <div className="space-y-2">
+                          <Label>Nombre</Label>
+                          <Input
+                            value={editingNombre}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingNombre(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Descripción</Label>
+                          <Textarea
+                            value={editingDescripcion}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditingDescripcion(e.target.value)}
+                            rows={4}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button onClick={() => handleSaveCompetencia(competencia.id)}>
+                            Guardar
+                          </Button>
+                          <Button variant="outline" onClick={() => setEditingCompetenciaId(null)}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div>
+                          <p className="font-medium">{competencia.nombre}</p>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                            {competencia.descripcion || "Sin descripción"}
+                          </p>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => handleEditCompetencia(competencia)}>
+                          Editar
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No hay competencias cargadas.</p>
             )}
           </CardContent>
         </Card>

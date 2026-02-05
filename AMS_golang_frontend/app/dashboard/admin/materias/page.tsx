@@ -46,7 +46,7 @@ export default function AdminMateriasPage() {
         setError(null);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : "Error al cargar materias"
+          err instanceof Error ? err.message : "Error al cargar materias",
         );
         setMaterias([]);
       } finally {
@@ -68,7 +68,7 @@ export default function AdminMateriasPage() {
   }
 
   const filteredMaterias = materias.filter((materia) =>
-    materia.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    materia.nombre.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (

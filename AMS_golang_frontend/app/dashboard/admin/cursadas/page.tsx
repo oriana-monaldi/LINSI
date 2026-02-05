@@ -123,7 +123,7 @@ function CursadasContent() {
           setCursadas(cursadas.filter((c) => c.id !== cursadaId));
         } catch (err) {
           setError(
-            err instanceof Error ? err.message : "Error al eliminar cursada"
+            err instanceof Error ? err.message : "Error al eliminar cursada",
           );
         }
       },

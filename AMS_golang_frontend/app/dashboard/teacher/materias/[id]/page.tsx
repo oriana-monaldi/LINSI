@@ -15,7 +15,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { comisionAPI, cursadaAPI, tpAPI, evaluacionAPI, entregaTPAPI, competenciaAPI } from "@/lib/api";
+import {
+  comisionAPI,
+  cursadaAPI,
+  tpAPI,
+  evaluacionAPI,
+  entregaTPAPI,
+  materiaCompetenciaAPI,
+} from "@/lib/api";
 import { Users, TrendingUp, FileText, Calendar, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -31,16 +38,25 @@ export default function TeacherMateriaDetailPage() {
   const [tps, setTps] = useState<any[]>([]);
   const [entregas, setEntregas] = useState<any[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<any[]>([]);
+  const [evaluacionEntregas, setEvaluacionEntregas] = useState<any[]>([]);
   const [competencias, setCompetencias] = useState<any[]>([]);
   const [creatingCompetencia, setCreatingCompetencia] = useState(false);
   const [competenciaNombre, setCompetenciaNombre] = useState("");
   const [competenciaDescripcion, setCompetenciaDescripcion] = useState("");
-  const [editingCompetenciaId, setEditingCompetenciaId] = useState<number | null>(null);
+  const [editingCompetenciaId, setEditingCompetenciaId] = useState<
+    number | null
+  >(null);
   const [editingNombre, setEditingNombre] = useState("");
   const [editingDescripcion, setEditingDescripcion] = useState("");
-  const [profesorFeedbacks, setProfesorFeedbacks] = useState<Record<number, string>>({});
-  const [savingFeedbackIds, setSavingFeedbackIds] = useState<Record<number, boolean>>({});
-  const [expandedFeedbackId, setExpandedFeedbackId] = useState<number | null>(null);
+  const [profesorFeedbacks, setProfesorFeedbacks] = useState<
+    Record<number, string>
+  >({});
+  const [savingFeedbackIds, setSavingFeedbackIds] = useState<
+    Record<number, boolean>
+  >({});
+  const [expandedFeedbackId, setExpandedFeedbackId] = useState<number | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -61,43 +77,82 @@ export default function TeacherMateriaDetailPage() {
         tpAPI.getAll(),
         entregaTPAPI.getAll(),
         evaluacionAPI.getByComision(comisionId),
-        competenciaAPI.getByComision(comisionId).catch(() => []),
       ])
-        .then(([comisionRes, cursadasRes, tpsRes, entregasRes, evaluacionesRes, competenciasRes]) => {
-          console.log("Comision detail data:", {
+        .then(
+          async ([
             comisionRes,
             cursadasRes,
             tpsRes,
             entregasRes,
             evaluacionesRes,
-            competenciasRes,
-          });
+          ]) => {
+            console.log("Comision detail data:", {
+              comisionRes,
+              cursadasRes,
+              tpsRes,
+              entregasRes,
+              evaluacionesRes,
+            });
 
-          setComision(comisionRes);
+            setComision(comisionRes);
 
-          const cursadasList = cursadasRes.data || cursadasRes || [];
-          setCursadas(Array.isArray(cursadasList) ? cursadasList : []);
+            const cursadasList = cursadasRes.data || cursadasRes || [];
+            setCursadas(Array.isArray(cursadasList) ? cursadasList : []);
 
-          const allTps = tpsRes.data || tpsRes.tps || tpsRes || [];
-          const comisionTps = Array.isArray(allTps)
-            ? allTps.filter(
-                (tp: any) => tp.comision_id === parseInt(comisionId),
-              )
-            : [];
-          setTps(comisionTps);
+            const allTps = tpsRes.data || tpsRes.tps || tpsRes || [];
+            const comisionTps = Array.isArray(allTps)
+              ? allTps.filter(
+                  (tp: any) => tp.comision_id === parseInt(comisionId),
+                )
+              : [];
+            setTps(comisionTps);
 
-          const entregasList = entregasRes.data || entregasRes.entregas || entregasRes || [];
-          setEntregas(Array.isArray(entregasList) ? entregasList : []);
+            const entregasList =
+              entregasRes.data || entregasRes.entregas || entregasRes || [];
+            setEntregas(Array.isArray(entregasList) ? entregasList : []);
 
-          const evaluacionesList =
-            evaluacionesRes.data || evaluacionesRes || [];
-          setEvaluaciones(
-            Array.isArray(evaluacionesList) ? evaluacionesList : [],
-          );
+            const evaluacionesList =
+              evaluacionesRes.data || evaluacionesRes || [];
+            const evaluacionesArray = Array.isArray(evaluacionesList)
+              ? evaluacionesList
+              : [];
+            setEvaluaciones(evaluacionesArray);
 
-          const competenciasList = competenciasRes.data || competenciasRes || [];
-          setCompetencias(Array.isArray(competenciasList) ? competenciasList : []);
-        })
+            if (evaluacionesArray.length > 0) {
+              const entregasEvaluacionesRes = await Promise.all(
+                evaluacionesArray.map((evaluacion: any) =>
+                  evaluacionAPI
+                    .getEntregas(String(evaluacion.id))
+                    .catch(() => []),
+                ),
+              );
+              const entregasEvaluacionesList = entregasEvaluacionesRes.flatMap(
+                (res: any) => res?.data || res?.entregas || res || [],
+              );
+              setEvaluacionEntregas(
+                Array.isArray(entregasEvaluacionesList)
+                  ? entregasEvaluacionesList
+                  : [],
+              );
+            } else {
+              setEvaluacionEntregas([]);
+            }
+
+            const materiaId = comisionRes?.materia?.id;
+            if (materiaId) {
+              const competenciasRes = await materiaCompetenciaAPI
+                .getByMateria(String(materiaId))
+                .catch(() => []);
+              const competenciasList =
+                competenciasRes.data || competenciasRes || [];
+              setCompetencias(
+                Array.isArray(competenciasList) ? competenciasList : [],
+              );
+            } else {
+              setCompetencias([]);
+            }
+          },
+        )
         .catch((err) => {
           console.error("Error loading comision data:", err);
         })
@@ -135,10 +190,15 @@ export default function TeacherMateriaDetailPage() {
     setSavingFeedbackIds((prev) => ({ ...prev, [cursada.id]: true }));
     try {
       const updated = await cursadaAPI.update(String(cursada.id), {
-        feedback: JSON.stringify({ alumno: parsed.alumno || "", profesor: draft }),
+        feedback: JSON.stringify({
+          alumno: parsed.alumno || "",
+          profesor: draft,
+        }),
       });
       const updatedItem = updated?.data || updated;
-      setCursadas((prev) => prev.map((c) => (c.id === cursada.id ? updatedItem : c)));
+      setCursadas((prev) =>
+        prev.map((c) => (c.id === cursada.id ? updatedItem : c)),
+      );
       setProfesorFeedbacks((prev) => ({ ...prev, [cursada.id]: draft }));
     } catch (err) {
       console.error("Error saving feedback:", err);
@@ -187,24 +247,28 @@ export default function TeacherMateriaDetailPage() {
 
   const comisionTpIds = new Set(tps.map((tp) => Number(tp.id)));
   const pendingGrades = entregas.filter((entrega) => {
-    const entregaTpId = Number(entrega?.tp_id ?? entrega?.tp?.id ?? entrega?.Tp?.ID);
-    const isComisionTp = Number.isFinite(entregaTpId) && comisionTpIds.has(entregaTpId);
-    return isComisionTp && (entrega?.estado === "pendiente" || entrega?.nota == null);
+    const entregaTpId = Number(
+      entrega?.tp_id ?? entrega?.tp?.id ?? entrega?.Tp?.ID,
+    );
+    const isComisionTp =
+      Number.isFinite(entregaTpId) && comisionTpIds.has(entregaTpId);
+    return (
+      isComisionTp && (entrega?.estado === "pendiente" || entrega?.nota == null)
+    );
   }).length;
 
   const handleCreateCompetencia = async () => {
     if (!competenciaNombre.trim()) return;
-    const tpId = tps[0]?.id;
-    if (!tpId) {
-      console.error("No hay TPs para asociar la competencia en esta comisión");
+    const materiaId = comision?.materia?.id;
+    if (!materiaId) {
+      console.error("No hay materia para asociar la competencia");
       return;
     }
     setCreatingCompetencia(true);
     try {
-      const created = await competenciaAPI.create({
+      const created = await materiaCompetenciaAPI.create(String(materiaId), {
         nombre: competenciaNombre.trim(),
         descripcion: competenciaDescripcion.trim(),
-        tp_id: Number(tpId),
       });
       const newItem = created?.data || created;
       setCompetencias((prev) => [...prev, newItem]);
@@ -226,18 +290,54 @@ export default function TeacherMateriaDetailPage() {
   const handleSaveCompetencia = async (id: number) => {
     if (!editingNombre.trim()) return;
     try {
-      const updated = await competenciaAPI.update(String(id), {
+      const updated = await materiaCompetenciaAPI.update(String(id), {
         nombre: editingNombre.trim(),
         descripcion: editingDescripcion.trim(),
       });
       const updatedItem = updated?.data || updated;
-      setCompetencias((prev) => prev.map((c) => (c.id === id ? updatedItem : c)));
+      setCompetencias((prev) =>
+        prev.map((c) => (c.id === id ? updatedItem : c)),
+      );
       setEditingCompetenciaId(null);
       setEditingNombre("");
       setEditingDescripcion("");
     } catch (err) {
       console.error("Error updating competencia:", err);
     }
+  };
+
+  const getFinalAverageForCursada = (cursada: any) => {
+    const cursadaId = Number(cursada?.id);
+    const alumnoId = Number(cursada?.alumno?.id ?? cursada?.alumno_id);
+    const tpGrades = entregas
+      .filter((entrega) => {
+        const entregaCursadaId = Number(
+          entrega?.cursada_id ?? entrega?.cursada?.id,
+        );
+        return Number.isFinite(entregaCursadaId) && entregaCursadaId === cursadaId;
+      })
+      .map((entrega) => Number(entrega?.nota))
+      .filter((nota) => Number.isFinite(nota));
+
+    const evaluacionGrades = evaluacionEntregas
+      .filter((entrega) => {
+        const entregaAlumnoId = Number(
+          entrega?.alumno_id ?? entrega?.alumno?.id,
+        );
+        return (
+          Number.isFinite(entregaAlumnoId) && entregaAlumnoId === alumnoId
+        );
+      })
+      .map((entrega) => Number(entrega?.nota))
+      .filter((nota) => Number.isFinite(nota));
+
+    const finalGrades = [...tpGrades, ...evaluacionGrades];
+    if (finalGrades.length === 0) return null;
+
+    const average =
+      finalGrades.reduce((total, value) => total + value, 0) /
+      finalGrades.length;
+    return average.toFixed(1);
   };
 
   return (
@@ -334,16 +434,20 @@ export default function TeacherMateriaDetailPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-6">
-                      {cursada.nota_final > 0 && (
+                      {(() => {
+                        const finalAverage = getFinalAverageForCursada(cursada);
+                        if (!finalAverage) return null;
+                        return (
                         <div className="text-center">
                           <p className="text-sm text-muted-foreground">
                             Nota Final
                           </p>
                           <p className="text-lg font-bold">
-                            {cursada.nota_final}
+                            {finalAverage}
                           </p>
                         </div>
-                      )}
+                        );
+                      })()}
                       {cursada.nota_conceptual > 0 && (
                         <div className="text-center">
                           <p className="text-sm text-muted-foreground">
@@ -378,10 +482,14 @@ export default function TeacherMateriaDetailPage() {
               <div className="space-y-4">
                 {cursadas.map((cursada) => {
                   const parsed = parseFeedback(cursada.feedback);
-                  const draft = profesorFeedbacks[cursada.id] ?? parsed.profesor ?? "";
+                  const draft =
+                    profesorFeedbacks[cursada.id] ?? parsed.profesor ?? "";
                   const isExpanded = expandedFeedbackId === cursada.id;
                   return (
-                    <div key={cursada.id} className="border rounded-lg p-4 space-y-3">
+                    <div
+                      key={cursada.id}
+                      className="border rounded-lg p-4 space-y-3"
+                    >
                       <div className="flex items-center justify-between gap-4">
                         <div>
                           <p className="font-medium">
@@ -395,7 +503,9 @@ export default function TeacherMateriaDetailPage() {
                           variant="outline"
                           size="sm"
                           onClick={() =>
-                            setExpandedFeedbackId(isExpanded ? null : cursada.id)
+                            setExpandedFeedbackId(
+                              isExpanded ? null : cursada.id,
+                            )
                           }
                         >
                           {isExpanded ? "Ocultar" : "Ver feedback"}
@@ -415,7 +525,9 @@ export default function TeacherMateriaDetailPage() {
                             <Label>Feedback general del profesor</Label>
                             <Textarea
                               value={draft}
-                              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                              onChange={(
+                                e: React.ChangeEvent<HTMLTextAreaElement>,
+                              ) =>
                                 setProfesorFeedbacks((prev) => ({
                                   ...prev,
                                   [cursada.id]: e.target.value,
@@ -429,7 +541,9 @@ export default function TeacherMateriaDetailPage() {
                               onClick={() => handleSaveFeedback(cursada)}
                               disabled={savingFeedbackIds[cursada.id]}
                             >
-                              {savingFeedbackIds[cursada.id] ? "Guardando..." : "Guardar"}
+                              {savingFeedbackIds[cursada.id]
+                                ? "Guardando..."
+                                : "Guardar"}
                             </Button>
                           </div>
                         </>
@@ -449,7 +563,9 @@ export default function TeacherMateriaDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle>Competencias</CardTitle>
-            <CardDescription>Competencias asociadas a esta materia</CardDescription>
+            <CardDescription>
+              Competencias asociadas a esta materia
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -457,7 +573,9 @@ export default function TeacherMateriaDetailPage() {
               <Input
                 id="competencia-nombre"
                 value={competenciaNombre}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCompetenciaNombre(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setCompetenciaNombre(e.target.value)
+                }
               />
             </div>
             <div className="space-y-2">
@@ -465,11 +583,16 @@ export default function TeacherMateriaDetailPage() {
               <Textarea
                 id="competencia-descripcion"
                 value={competenciaDescripcion}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setCompetenciaDescripcion(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  setCompetenciaDescripcion(e.target.value)
+                }
                 rows={4}
               />
             </div>
-            <Button onClick={handleCreateCompetencia} disabled={creatingCompetencia}>
+            <Button
+              onClick={handleCreateCompetencia}
+              disabled={creatingCompetencia}
+            >
               {creatingCompetencia ? "Guardando..." : "Agregar Competencia"}
             </Button>
 
@@ -486,22 +609,33 @@ export default function TeacherMateriaDetailPage() {
                           <Label>Nombre</Label>
                           <Input
                             value={editingNombre}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingNombre(e.target.value)}
+                            onChange={(
+                              e: React.ChangeEvent<HTMLInputElement>,
+                            ) => setEditingNombre(e.target.value)}
                           />
                         </div>
                         <div className="space-y-2">
                           <Label>Descripción</Label>
                           <Textarea
                             value={editingDescripcion}
-                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditingDescripcion(e.target.value)}
+                            onChange={(
+                              e: React.ChangeEvent<HTMLTextAreaElement>,
+                            ) => setEditingDescripcion(e.target.value)}
                             rows={4}
                           />
                         </div>
                         <div className="flex gap-2">
-                          <Button onClick={() => handleSaveCompetencia(competencia.id)}>
+                          <Button
+                            onClick={() =>
+                              handleSaveCompetencia(competencia.id)
+                            }
+                          >
                             Guardar
                           </Button>
-                          <Button variant="outline" onClick={() => setEditingCompetenciaId(null)}>
+                          <Button
+                            variant="outline"
+                            onClick={() => setEditingCompetenciaId(null)}
+                          >
                             Cancelar
                           </Button>
                         </div>
@@ -514,7 +648,11 @@ export default function TeacherMateriaDetailPage() {
                             {competencia.descripcion || "Sin descripción"}
                           </p>
                         </div>
-                        <Button variant="outline" size="sm" onClick={() => handleEditCompetencia(competencia)}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditCompetencia(competencia)}
+                        >
                           Editar
                         </Button>
                       </>
@@ -523,7 +661,9 @@ export default function TeacherMateriaDetailPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No hay competencias cargadas.</p>
+              <p className="text-sm text-muted-foreground">
+                No hay competencias cargadas.
+              </p>
             )}
           </CardContent>
         </Card>

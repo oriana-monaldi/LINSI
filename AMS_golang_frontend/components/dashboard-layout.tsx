@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useState } from "react"
+import type React from "react";
+import { useEffect, useState } from "react";
 
-import { useAuth } from "@/lib/auth-context"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,96 +16,101 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { GraduationCap, Bell, LogOut, CheckCheck } from "lucide-react"
+import { GraduationCap, Bell, LogOut, CheckCheck } from "lucide-react";
 
-import { notificacionAPI } from "@/lib/api"
+import { notificacionAPI } from "@/lib/api";
 
 interface DashboardLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 interface Notificacion {
-  id: number
-  mensaje: string
-  fecha_hora: string
-  leida: boolean
-  alumno_id: number
+  id: number;
+  mensaje: string;
+  fecha_hora: string;
+  leida: boolean;
+  alumno_id: number;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, logout } = useAuth()
-  const router = useRouter()
+  const { user, logout } = useAuth();
+  const router = useRouter();
 
-  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([])
-  const [unreadCount, setUnreadCount] = useState(0)
+  const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     async function fetchNotifications() {
-      if (!user?.id || (user.role !== "student" && user.role !== "alumno")) return
+      if (!user?.id || (user.role !== "student" && user.role !== "alumno"))
+        return;
 
       try {
-        const data = await notificacionAPI.getByAlumno(String(user.id))
-        setNotificaciones(data || [])
-        setUnreadCount((data || []).filter((n: Notificacion) => !n.leida).length)
+        const data = await notificacionAPI.getByAlumno(String(user.id));
+        setNotificaciones(data || []);
+        setUnreadCount(
+          (data || []).filter((n: Notificacion) => !n.leida).length,
+        );
       } catch (err) {
-        console.error("Error fetching notifications:", err)
+        console.error("Error fetching notifications:", err);
       }
     }
 
-    fetchNotifications()
+    fetchNotifications();
 
-    const interval = setInterval(fetchNotifications, 30000)
-    return () => clearInterval(interval)
-  }, [user])
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleMarkAsRead = async (id: number) => {
     try {
-      await notificacionAPI.markAsRead(String(id))
-      setNotificaciones(prev =>
-        prev.map(n => n.id === id ? { ...n, leida: true } : n)
-      )
-      setUnreadCount(prev => Math.max(0, prev - 1))
+      await notificacionAPI.markAsRead(String(id));
+      setNotificaciones((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, leida: true } : n)),
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
-      console.error("Error marking notification as read:", err)
+      console.error("Error marking notification as read:", err);
     }
-  }
+  };
 
   const handleLogout = () => {
-    logout()
-    router.push("/")
-  }
+    logout();
+    router.push("/");
+  };
 
   const getInitials = () => {
-    if (!user) return "U"
-    const first = user.nombre?.[0] ?? ""
-    const last = user.apellido?.[0] ?? ""
-    return `${first}${last}`.toUpperCase()
-  }
+    if (!user) return "U";
+    const first = user.nombre?.[0] ?? "";
+    const last = user.apellido?.[0] ?? "";
+    return `${first}${last}`.toUpperCase();
+  };
 
   const getRoleLabel = () => {
     switch (user?.role) {
       case "student":
-        return "Alumno"
+        return "Alumno";
       case "teacher":
-        return "Profesor"
+        return "Profesor";
       case "admin":
-        return "Administrador"
+        return "Administrador";
       default:
-        return "Usuario"
+        return "Usuario";
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
-          
-          <Link href="/" className="flex items-center gap-3 pl-6 cursor-pointer">
+          <Link
+            href="/"
+            className="flex items-center gap-3 pl-6 cursor-pointer"
+          >
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <GraduationCap className="w-6 h-6 text-primary-foreground" />
             </div>
@@ -116,7 +121,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </Link>
 
           <div className="flex items-center gap-4">
-            
             {(user?.role === "student" || user?.role === "alumno") && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -150,23 +154,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                           className={`flex flex-col items-start gap-1 p-3 cursor-pointer ${
                             !notif.leida ? "bg-primary/5" : ""
                           }`}
-                          onClick={() => !notif.leida && handleMarkAsRead(notif.id)}
+                          onClick={() =>
+                            !notif.leida && handleMarkAsRead(notif.id)
+                          }
                         >
                           <div className="flex items-start gap-2 w-full">
                             {!notif.leida && (
                               <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                             )}
-                            <p className={`text-sm flex-1 ${!notif.leida ? "font-medium" : ""}`}>
+                            <p
+                              className={`text-sm flex-1 ${!notif.leida ? "font-medium" : ""}`}
+                            >
                               {notif.mensaje}
                             </p>
                           </div>
                           <p className="text-xs text-muted-foreground pl-4">
-                            {new Date(notif.fecha_hora).toLocaleDateString("es-AR", {
-                              day: "2-digit",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            })}
+                            {new Date(notif.fecha_hora).toLocaleDateString(
+                              "es-AR",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
                           </p>
                         </DropdownMenuItem>
                       ))
@@ -179,7 +190,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   {notificaciones.length > 0 && (
                     <>
                       <DropdownMenuSeparator />
-                      <Link href="/dashboard/student/notificaciones" className="block">
+                      <Link
+                        href="/dashboard/student/notificaciones"
+                        className="block"
+                      >
                         <DropdownMenuItem className="justify-center text-primary cursor-pointer">
                           Ver todas las notificaciones
                         </DropdownMenuItem>
@@ -204,13 +218,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end" className="w-56">
-                
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
                       {user?.nombre} {user?.apellido}
                     </p>
-                    <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email}
+                    </p>
                   </div>
                 </DropdownMenuLabel>
 
@@ -220,10 +235,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Cerrar Sesión</span>
                 </DropdownMenuItem>
-
               </DropdownMenuContent>
             </DropdownMenu>
-
           </div>
         </div>
       </header>
@@ -232,5 +245,5 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="w-full max-w-5xl mx-auto px-6">{children}</div>
       </main>
     </div>
-  )
+  );
 }

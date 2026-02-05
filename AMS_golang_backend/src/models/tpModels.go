@@ -5,7 +5,7 @@ import "time"
 type TpModel struct {
 	ID               int       `json:"id" gorm:"primaryKey;autoIncrement"`
 	Consigna         string    `json:"consigna" gorm:"column:consigna;type:text;not null"`
-	FechaHoraEntrega time.Time `json:"fecha_entrega" gorm:"column:fecha_entrega;type:date;not null"`
+	FechaHoraEntrega time.Time `json:"fecha_entrega" gorm:"column:fecha_entrega;type:timestamptz;not null"`
 	Vigente          bool      `json:"vigente" gorm:"column:vigente;type:boolean;not null;default:true"`
 	Nota             float64   `json:"nota" gorm:"column:nota;type:float;default:null"`
 	Devolucion       string    `json:"devolucion" gorm:"column:devolucion;type:text;default:null"`

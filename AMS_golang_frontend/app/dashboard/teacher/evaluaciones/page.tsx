@@ -1,73 +1,97 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
-import { DashboardLayout } from "@/components/dashboard-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { evaluacionAPI, comisionAPI } from "@/lib/api"
-import { Calendar, Plus, CheckCircle2, Clock } from "lucide-react"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import Link from "next/link"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { DashboardLayout } from "@/components/dashboard-layout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { evaluacionAPI, comisionAPI } from "@/lib/api";
+import { Calendar, Plus, CheckCircle2, Clock } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import Link from "next/link";
 
 export default function TeacherEvaluacionesPage() {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
-  const [evaluaciones, setEvaluaciones] = useState<any[]>([])
-  const [comisiones, setComisiones] = useState<any[]>([])
-  const [selectedComision, setSelectedComision] = useState<string>("all")
-  const [loading, setLoading] = useState(true)
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const [evaluaciones, setEvaluaciones] = useState<any[]>([]);
+  const [comisiones, setComisiones] = useState<any[]>([]);
+  const [selectedComision, setSelectedComision] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== "teacher" && user.role !== "profesor")) {
-      router.push("/")
+    if (
+      !isLoading &&
+      (!user || (user.role !== "teacher" && user.role !== "profesor"))
+    ) {
+      router.push("/");
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     if (user) {
-      setLoading(true)
-      Promise.all([
-        evaluacionAPI.getMine(),
-        comisionAPI.getByProfesor()
-      ])
+      setLoading(true);
+      Promise.all([evaluacionAPI.getMine(), comisionAPI.getByProfesor()])
         .then(([evaluacionesResponse, comisionesResponse]) => {
-          console.log('Evaluaciones response:', evaluacionesResponse)
-          const evaluacionesList = evaluacionesResponse.data || evaluacionesResponse.evaluaciones || evaluacionesResponse || []
-          setEvaluaciones(Array.isArray(evaluacionesList) ? evaluacionesList : [])
+          console.log("Evaluaciones response:", evaluacionesResponse);
+          const evaluacionesList =
+            evaluacionesResponse.data ||
+            evaluacionesResponse.evaluaciones ||
+            evaluacionesResponse ||
+            [];
+          setEvaluaciones(
+            Array.isArray(evaluacionesList) ? evaluacionesList : [],
+          );
 
-          const profesorComisiones = comisionesResponse.data || comisionesResponse || []
+          const profesorComisiones =
+            comisionesResponse.data || comisionesResponse || [];
           const comisionesList = Array.isArray(profesorComisiones)
             ? profesorComisiones.map((pc: any) => pc.comision).filter(Boolean)
-            : []
-          setComisiones(comisionesList)
+            : [];
+          setComisiones(comisionesList);
         })
-        .catch(err => {
-          console.error('Error loading data:', err)
-          setEvaluaciones([])
-          setComisiones([])
+        .catch((err) => {
+          console.error("Error loading data:", err);
+          setEvaluaciones([]);
+          setComisiones([]);
         })
-        .finally(() => setLoading(false))
+        .finally(() => setLoading(false));
     }
-  }, [user])
+  }, [user]);
 
-  if (isLoading || !user || user.role !== "teacher" && user.role !== "profesor") {
+  if (
+    isLoading ||
+    !user ||
+    (user.role !== "teacher" && user.role !== "profesor")
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
-    )
+    );
   }
 
-  const filteredEvaluaciones = selectedComision === "all" 
-    ? evaluaciones 
-    : evaluaciones.filter(ev => ev.comision_id === parseInt(selectedComision))
+  const filteredEvaluaciones =
+    selectedComision === "all"
+      ? evaluaciones
+      : evaluaciones.filter(
+          (ev) => ev.comision_id === parseInt(selectedComision),
+        );
 
-  const upcomingEvaluaciones = filteredEvaluaciones.filter((ev) => new Date(ev.fecha_evaluacion) > new Date())
-  const pastEvaluaciones = filteredEvaluaciones.filter((ev) => new Date(ev.fecha_evaluacion) <= new Date())
+  const upcomingEvaluaciones = filteredEvaluaciones.filter(
+    (ev) => new Date(ev.fecha_evaluacion) > new Date(),
+  );
+  const pastEvaluaciones = filteredEvaluaciones.filter(
+    (ev) => new Date(ev.fecha_evaluacion) <= new Date(),
+  );
 
   return (
     <DashboardLayout>
@@ -75,7 +99,9 @@ export default function TeacherEvaluacionesPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Evaluaciones</h1>
-            <p className="text-muted-foreground">Gestiona los exámenes de tus materias</p>
+            <p className="text-muted-foreground">
+              Gestiona los exámenes de tus materias
+            </p>
           </div>
           <Link href="/dashboard/teacher/evaluaciones/crear">
             <Button>
@@ -99,11 +125,15 @@ export default function TeacherEvaluacionesPage() {
               {comisiones.map((comision) => (
                 <Button
                   key={comision.id}
-                  variant={selectedComision === comision.id.toString() ? "default" : "outline"}
+                  variant={
+                    selectedComision === comision.id.toString()
+                      ? "default"
+                      : "outline"
+                  }
                   size="sm"
                   onClick={() => setSelectedComision(comision.id.toString())}
                 >
-                  {comision.materia?.nombre || 'Materia'} - {comision.nombre}
+                  {comision.materia?.nombre || "Materia"} - {comision.nombre}
                 </Button>
               ))}
             </div>
@@ -137,12 +167,18 @@ export default function TeacherEvaluacionesPage() {
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">
-                        {format(new Date(ev.fecha_evaluacion), "EEEE dd 'de' MMMM, yyyy", { locale: es })}
+                        {format(
+                          new Date(ev.fecha_evaluacion),
+                          "EEEE dd 'de' MMMM, yyyy",
+                          { locale: es },
+                        )}
                       </span>
                     </div>
                     <div className="p-3 bg-muted rounded-lg">
                       <p className="text-sm font-medium mb-1">Temas:</p>
-                      <p className="text-sm text-muted-foreground">{ev.temas}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {ev.temas}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -152,7 +188,9 @@ export default function TeacherEvaluacionesPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Clock className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium">No hay evaluaciones próximas</p>
+                <p className="text-lg font-medium">
+                  No hay evaluaciones próximas
+                </p>
               </CardContent>
             </Card>
           )}
@@ -175,11 +213,15 @@ export default function TeacherEvaluacionesPage() {
                     <div className="flex items-start justify-between">
                       <div>
                         <CardDescription>
-                          {ev.comision?.nombre || `Comisión ${ev.comision_id}`} - {format(new Date(ev.fecha_evaluacion), "dd/MM/yyyy")}
+                          {ev.comision?.nombre || `Comisión ${ev.comision_id}`}{" "}
+                          -{" "}
+                          {format(new Date(ev.fecha_evaluacion), "dd/MM/yyyy")}
                         </CardDescription>
                       </div>
                       {ev.nota ? (
-                        <Badge className="bg-green-500 hover:bg-green-600">Calificado</Badge>
+                        <Badge className="bg-green-500 hover:bg-green-600">
+                          Calificado
+                        </Badge>
                       ) : (
                         <Badge variant="secondary">Pendiente</Badge>
                       )}
@@ -188,25 +230,36 @@ export default function TeacherEvaluacionesPage() {
                   <CardContent className="space-y-3">
                     <div className="p-3 bg-muted rounded-lg">
                       <p className="text-sm font-medium mb-1">Temas:</p>
-                      <p className="text-sm text-muted-foreground">{ev.temas}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {ev.temas}
+                      </p>
                     </div>
 
                     {ev.fecha_devolucion && (
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Devolución</span>
-                        <span className="font-medium">{format(new Date(ev.fecha_devolucion), "dd/MM/yyyy")}</span>
+                        <span className="text-muted-foreground">
+                          Devolución
+                        </span>
+                        <span className="font-medium">
+                          {format(new Date(ev.fecha_devolucion), "dd/MM/yyyy")}
+                        </span>
                       </div>
                     )}
 
                     {ev.nota && (
                       <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border border-primary/20">
                         <span className="font-medium">Calificación</span>
-                        <span className="text-2xl font-bold text-primary">{ev.nota}</span>
+                        <span className="text-2xl font-bold text-primary">
+                          {ev.nota}
+                        </span>
                       </div>
                     )}
 
                     <Link href={`/dashboard/teacher/evaluaciones/${ev.id}`}>
-                      <Button variant="outline" className="w-full bg-transparent">
+                      <Button
+                        variant="outline"
+                        className="w-full bg-transparent"
+                      >
                         {ev.nota ? "Ver Detalles" : "Calificar"}
                       </Button>
                     </Link>
@@ -218,12 +271,14 @@ export default function TeacherEvaluacionesPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium">No hay evaluaciones anteriores</p>
+                <p className="text-lg font-medium">
+                  No hay evaluaciones anteriores
+                </p>
               </CardContent>
             </Card>
           )}
         </div>
       </div>
     </DashboardLayout>
-  )
+  );
 }

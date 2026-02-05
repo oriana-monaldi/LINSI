@@ -97,7 +97,7 @@ export default function AdminMateriaDetailPage() {
   >({});
   const [allProfesores, setAllProfesores] = useState<Profesor[]>([]);
   const [showAssignProfesor, setShowAssignProfesor] = useState<number | null>(
-    null
+    null,
   );
   const [selectedProfesorId, setSelectedProfesorId] = useState("");
   const [selectedCargo, setSelectedCargo] = useState<string>("JTP");
@@ -120,7 +120,7 @@ export default function AdminMateriaDetailPage() {
             materiaAPI.getById(materiaId),
             comisionAPI.getByMateria(materiaId),
             profesorAPI.getAll(),
-          ]
+          ],
         );
 
         setMateria(materiaData);
@@ -133,7 +133,7 @@ export default function AdminMateriaDetailPage() {
         for (const comision of comisionesData || []) {
           try {
             const profs = await profesorXComisionAPI.getByComision(
-              comision.id.toString()
+              comision.id.toString(),
             );
             asignaciones[comision.id] = profs || [];
           } catch {
@@ -179,7 +179,7 @@ export default function AdminMateriaDetailPage() {
       setEditing(false);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Error al actualizar materia"
+        err instanceof Error ? err.message : "Error al actualizar materia",
       );
     } finally {
       setSaving(false);
@@ -206,7 +206,7 @@ export default function AdminMateriaDetailPage() {
             errorMsg.includes("23503")
           ) {
             setError(
-              "No se puede eliminar esta materia porque tiene comisiones asociadas. Elimina primero las comisiones."
+              "No se puede eliminar esta materia porque tiene comisiones asociadas. Elimina primero las comisiones.",
             );
           } else {
             setError(errorMsg);
@@ -281,7 +281,7 @@ export default function AdminMateriaDetailPage() {
             errorMsg.includes("cursada")
           ) {
             setError(
-              "No se puede eliminar esta comision porque tiene cursadas activas. Elimina primero las cursadas."
+              "No se puede eliminar esta comision porque tiene cursadas activas. Elimina primero las cursadas.",
             );
           } else {
             setError(errorMsg);
@@ -304,7 +304,7 @@ export default function AdminMateriaDetailPage() {
       });
 
       const profesor = allProfesores.find(
-        (p) => p.id === parseInt(selectedProfesorId, 10)
+        (p) => p.id === parseInt(selectedProfesorId, 10),
       );
       const fullAssignment = { ...assignment, profesor };
 
@@ -320,7 +320,7 @@ export default function AdminMateriaDetailPage() {
       setSelectedCargo("JTP");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Error al asignar profesor"
+        err instanceof Error ? err.message : "Error al asignar profesor",
       );
     } finally {
       setAssigningProfesor(false);
@@ -340,12 +340,12 @@ export default function AdminMateriaDetailPage() {
           setProfesoresAsignados({
             ...profesoresAsignados,
             [comisionId]: profesoresAsignados[comisionId].filter(
-              (a) => a.id !== assignmentId
+              (a) => a.id !== assignmentId,
             ),
           });
         } catch (err) {
           setError(
-            err instanceof Error ? err.message : "Error al quitar profesor"
+            err instanceof Error ? err.message : "Error al quitar profesor",
           );
         }
       },
@@ -417,7 +417,6 @@ export default function AdminMateriaDetailPage() {
               Año {materia.ano_carrera}
             </p>
           </div>
-    
         </div>
 
         {error && (
@@ -606,7 +605,7 @@ export default function AdminMateriaDetailPage() {
                             setShowAssignProfesor(
                               showAssignProfesor === comision.id
                                 ? null
-                                : comision.id
+                                : comision.id,
                             )
                           }
                         >

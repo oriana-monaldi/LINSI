@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -101,6 +102,7 @@ func main() {
 		&models.TpModel{},
 		&models.EntregaTP{},
 		&models.Competencia{},
+		&models.MateriaCompetencia{},
 		&models.Entrega{},
 		&models.Archivo{},
 		&models.EvaluacionModel{},
@@ -109,6 +111,19 @@ func main() {
 		&models.AnexoArchivo{},
 	); err != nil {
 		log.Fatalf("Error during auto migration: %v\n", err)
+	}
+
+	if db.Migrator().HasTable(&models.TpModel{}) {
+		tableName := db.Config.NamingStrategy.TableName("tp_model")
+		alterErr := db.Exec(
+			fmt.Sprintf(
+				"ALTER TABLE %s ALTER COLUMN fecha_entrega TYPE timestamptz USING fecha_entrega::timestamptz",
+				tableName,
+			),
+		).Error
+		if alterErr != nil {
+			log.Printf("Warning: could not alter fecha_entrega type: %v", alterErr)
+		}
 	}
 
 	// Ejecutar seed inicial de la DB
@@ -140,6 +155,7 @@ func main() {
 	profesorXComisionService := services.NewProfesorXComisionService(db)
 	tpService := services.NewTpService(db)
 	competenciaService := services.NewCompetenciaService(db)
+	materiaCompetenciaService := services.NewMateriaCompetenciaService(db)
 	// entregaService := services.NewEntregaService(db) // Commented out - using EntregaTP instead
 	evaluacionService := services.NewEvaluacionService(db)
 	anexoService := services.NewAnexoService(db)
@@ -157,6 +173,7 @@ func main() {
 	routes.SetupTpRoutes(router, tpService)
 	routes.SetupEntregaTPRoutes(router, db)
 	routes.SetupCompetenciaRoutes(router, competenciaService)
+	routes.SetupMateriaCompetenciaRoutes(router, materiaCompetenciaService)
 	// routes.SetupEntregaRoutes(router, entregaService) // Commented out - using EntregaTP instead
 	routes.SetupEvaluacionRoutes(router, evaluacionService)
 	routes.SetupAnexoRoutes(router, anexoService)

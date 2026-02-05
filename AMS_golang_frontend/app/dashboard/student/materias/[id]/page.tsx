@@ -17,7 +17,14 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cursadaAPI, entregaTPAPI, tpAPI, evaluacionAPI, competenciaAPI } from "@/lib/api";
+import {
+  cursadaAPI,
+  entregaTPAPI,
+  tpAPI,
+  evaluacionAPI,
+  competenciaAPI,
+  materiaCompetenciaAPI,
+} from "@/lib/api";
 import {
   BookOpen,
   Award,
@@ -110,6 +117,7 @@ export default function MateriaDetailPage() {
   const [tps, setTps] = useState<TP[]>([]);
   const [evaluaciones, setEvaluaciones] = useState<EntregaEvaluacion[]>([]);
   const [competencias, setCompetencias] = useState<any[]>([]);
+  const [materiaCompetencias, setMateriaCompetencias] = useState<any[]>([]);
   const [alumnoFeedback, setAlumnoFeedback] = useState("");
   const [profesorFeedback, setProfesorFeedback] = useState("");
   const [savingFeedback, setSavingFeedback] = useState(false);
@@ -160,53 +168,79 @@ export default function MateriaDetailPage() {
           cursadasResult.status === "fulfilled" ? cursadasResult.value : [];
         const entregasData =
           entregasResult.status === "fulfilled" ? entregasResult.value : [];
-        const tpsData =
-          tpsResult.status === "fulfilled" ? tpsResult.value : [];
+        const tpsData = tpsResult.status === "fulfilled" ? tpsResult.value : [];
 
         const foundCursada = (cursadasData || []).find(
-          (c: Cursada) => c.id === Number(cursadaId)
+          (c: Cursada) => c.id === Number(cursadaId),
         );
         setCursada(foundCursada || null);
 
         const filteredEntregas = (entregasData || []).filter(
-          (e: EntregaTP) => e.cursada_id === Number(cursadaId)
+          (e: EntregaTP) => e.cursada_id === Number(cursadaId),
         );
         setEntregas(filteredEntregas);
 
         if (foundCursada && Array.isArray(tpsData)) {
           const tpsForComision = (tpsData as TP[]).filter(
-            (t) => t.comision_id === foundCursada.comision.id
+            (t) => t.comision_id === foundCursada.comision.id,
           );
           setTps(tpsForComision);
 
           const tpIds = new Set(tpsForComision.map((tp) => tp.id));
-          const allCompetencias = await competenciaAPI.getAll().catch((err) => {
-            console.error("Error loading competencias:", err);
-            return null;
-          });
+          const [allCompetencias, materiaCompetenciasRes] = await Promise.all([
+            competenciaAPI.getAll().catch((err) => {
+              console.error("Error loading competencias TP:", err);
+              return null;
+            }),
+            materiaCompetenciaAPI
+              .getByMateria(String(foundCursada.comision.materia.id))
+              .catch((err) => {
+                console.error("Error loading competencias materia:", err);
+                return null;
+              }),
+          ]);
           const allList = allCompetencias?.data || allCompetencias || [];
           const filtered = Array.isArray(allList)
             ? allList.filter((c: any) => tpIds.has(c.tp_id))
             : [];
           setCompetencias(filtered);
+          const materiaList =
+            materiaCompetenciasRes?.data || materiaCompetenciasRes || [];
+          setMateriaCompetencias(Array.isArray(materiaList) ? materiaList : []);
 
           try {
-            console.log("Fetching evaluaciones for student in comision:", foundCursada.comision.id);
-            const evaluacionesData = await evaluacionAPI.getMyAsStudent().catch((err) => {
-              console.error("Error from getMyAsStudent:", err);
-              return [];
-            });
+            console.log(
+              "Fetching evaluaciones for student in comision:",
+              foundCursada.comision.id,
+            );
+            const evaluacionesData = await evaluacionAPI
+              .getMyAsStudent()
+              .catch((err) => {
+                console.error("Error from getMyAsStudent:", err);
+                return [];
+              });
             console.log("Evaluaciones response:", evaluacionesData);
-            const evalList = Array.isArray(evaluacionesData) ? evaluacionesData : (evaluacionesData?.data || evaluacionesData?.evaluaciones || []);
+            const evalList = Array.isArray(evaluacionesData)
+              ? evaluacionesData
+              : evaluacionesData?.data || evaluacionesData?.evaluaciones || [];
             console.log("Evaluaciones list after parsing:", evalList);
             console.log("Filtering by comision_id:", foundCursada.comision.id);
-            
+
             const evalForComision = evalList.filter((e: EntregaEvaluacion) => {
-              console.log("Checking entrega:", e.id, "evaluacion?.comision_id:", e.evaluacion?.comision_id, "foundCursada.comision.id:", foundCursada.comision.id);
+              console.log(
+                "Checking entrega:",
+                e.id,
+                "evaluacion?.comision_id:",
+                e.evaluacion?.comision_id,
+                "foundCursada.comision.id:",
+                foundCursada.comision.id,
+              );
               return e.evaluacion?.comision_id === foundCursada.comision.id;
             });
             console.log("Filtered evaluaciones for comision:", evalForComision);
-            setEvaluaciones(Array.isArray(evalForComision) ? evalForComision : []);
+            setEvaluaciones(
+              Array.isArray(evalForComision) ? evalForComision : [],
+            );
           } catch (err) {
             console.error("Error loading evaluaciones:", err);
             setEvaluaciones([]);
@@ -215,11 +249,12 @@ export default function MateriaDetailPage() {
           setTps([]);
           setEvaluaciones([]);
           setCompetencias([]);
+          setMateriaCompetencias([]);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
         setError(
-          err instanceof Error ? err.message : "Error al cargar los datos"
+          err instanceof Error ? err.message : "Error al cargar los datos",
         );
       } finally {
         setDataLoading(false);
@@ -261,7 +296,7 @@ export default function MateriaDetailPage() {
 
   async function handleFileSelect(
     tpId: number,
-    e: ChangeEvent<HTMLInputElement>
+    e: ChangeEvent<HTMLInputElement>,
   ) {
     const file = e.target.files?.[0] ?? null;
     setSelectedFiles((prev) => ({ ...prev, [tpId]: file }));
@@ -273,7 +308,7 @@ export default function MateriaDetailPage() {
       toast({
         title: "Error",
         description: "Selecciona un archivo antes de enviar",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -281,7 +316,6 @@ export default function MateriaDetailPage() {
     try {
       setUploading((p) => ({ ...p, [tp.id]: true }));
 
-    
       const form = new FormData();
       form.append("file", file);
 
@@ -309,14 +343,15 @@ export default function MateriaDetailPage() {
       setSelectedFiles((p) => ({ ...p, [tp.id]: null }));
       toast({
         title: "Éxito",
-        description: "Entrega creada correctamente"
+        description: "Entrega creada correctamente",
       });
     } catch (err) {
       console.error(err);
       toast({
         title: "Error",
-        description: err instanceof Error ? err.message : "Error al enviar entrega",
-        variant: "destructive"
+        description:
+          err instanceof Error ? err.message : "Error al enviar entrega",
+        variant: "destructive",
       });
     } finally {
       setUploading((p) => ({ ...p, [tp.id]: false }));
@@ -369,22 +404,31 @@ export default function MateriaDetailPage() {
 
   const completedEntregas = entregas.filter((e) => e.estado === "calificado");
   const totalTps = tps.length;
-  const progress = totalTps > 0 ? (completedEntregas.length / totalTps) * 100 : 0;
+  const progress =
+    totalTps > 0 ? (completedEntregas.length / totalTps) * 100 : 0;
 
-  const allGrades = completedEntregas
-    .filter((e) => e.nota !== null)
-    .map((e) => e.nota!);
+  const tpGrades = completedEntregas
+    .filter((e) => e.nota !== null && e.nota !== undefined)
+    .map((e) => Number(e.nota))
+    .filter((n) => Number.isFinite(n));
 
   const evaluacionGrades = evaluaciones
     .filter((e) => e.nota !== null && e.nota !== undefined)
-    .map((e) => Number(e.nota));
+    .map((e) => Number(e.nota))
+    .filter((n) => Number.isFinite(n));
 
-  allGrades.push(...evaluacionGrades.filter((n) => Number.isFinite(n)));
-  
-  const average =
-    allGrades.length > 0
-      ? (allGrades.reduce((a, b) => a + b, 0) / allGrades.length).toFixed(1)
+  const averageTps =
+    tpGrades.length > 0
+      ? (tpGrades.reduce((a, b) => a + b, 0) / tpGrades.length).toFixed(1)
       : "N/A";
+
+  const finalGrades = [...tpGrades, ...evaluacionGrades];
+  const finalGradeAverage =
+    finalGrades.length > 0
+      ? (finalGrades.reduce((a, b) => a + b, 0) / finalGrades.length).toFixed(
+          1,
+        )
+      : "Pendiente";
 
   return (
     <DashboardLayout>
@@ -399,11 +443,13 @@ export default function MateriaDetailPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Promedio</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Promedio de trabajos prácticos
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{average}</div>
+              <div className="text-2xl font-bold">{averageTps}</div>
             </CardContent>
           </Card>
 
@@ -425,7 +471,7 @@ export default function MateriaDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {cursada.nota_final || "Pendiente"}
+                {finalGradeAverage}
               </div>
             </CardContent>
           </Card>
@@ -434,11 +480,15 @@ export default function MateriaDetailPage() {
         <Card>
           <CardHeader>
             <CardTitle>Feedback</CardTitle>
-            <CardDescription>Intercambio de feedback con el profesor</CardDescription>
+            <CardDescription>
+              Intercambio de feedback con el profesor
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="feedback-alumno">Tu feedback para el profesor</Label>
+              <Label htmlFor="feedback-alumno">
+                Tu feedback para el profesor
+              </Label>
               <Textarea
                 id="feedback-alumno"
                 value={alumnoFeedback}
@@ -466,7 +516,8 @@ export default function MateriaDetailPage() {
                   console.error("Error saving feedback:", err);
                   toast({
                     title: "Error",
-                    description: err?.message || "No se pudo guardar el feedback",
+                    description:
+                      err?.message || "No se pudo guardar el feedback",
                     variant: "destructive",
                   });
                 } finally {
@@ -480,7 +531,9 @@ export default function MateriaDetailPage() {
 
             {profesorFeedback && (
               <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm font-medium mb-1">Feedback del profesor:</p>
+                <p className="text-sm font-medium mb-1">
+                  Feedback del profesor:
+                </p>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {profesorFeedback}
                 </p>
@@ -491,13 +544,13 @@ export default function MateriaDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Competencias</CardTitle>
-            <CardDescription>Listado de competencias de la materia</CardDescription>
+            <CardTitle>Competencias de la materia</CardTitle>
+            <CardDescription>Listado de competencias generales</CardDescription>
           </CardHeader>
           <CardContent>
-            {competencias.length > 0 ? (
+            {materiaCompetencias.length > 0 ? (
               <div className="space-y-3">
-                {competencias.map((competencia) => (
+                {materiaCompetencias.map((competencia) => (
                   <div key={competencia.id} className="border rounded-lg p-4">
                     <p className="font-medium">{competencia.nombre}</p>
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap">
@@ -507,7 +560,9 @@ export default function MateriaDetailPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No hay competencias cargadas.</p>
+              <p className="text-sm text-muted-foreground">
+                No hay competencias cargadas.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -521,10 +576,9 @@ export default function MateriaDetailPage() {
           <TabsContent value="trabajos" className="space-y-4">
             {entregas.length > 0 || tps.length > 0 ? (
               <div className="grid gap-4">
-      
                 {(() => {
                   const tpIdsWithEntrega = new Set(
-                    entregas.map((e) => e.tp_id)
+                    entregas.map((e) => e.tp_id),
                   );
                   const entregaItems = entregas.map((entrega) => ({
                     type: "entrega" as const,
@@ -536,9 +590,26 @@ export default function MateriaDetailPage() {
 
                   const items = [...entregaItems, ...pendingTpItems];
 
+                  const normalizeText = (value?: string) =>
+                    (value || "").trim().toLowerCase();
+                  const materiaKeys = new Set(
+                    materiaCompetencias.map(
+                      (c: any) =>
+                        `${normalizeText(c.nombre)}::${normalizeText(c.descripcion)}`,
+                    ),
+                  );
+                  const competenciasByTp = (tpId: number) =>
+                    competencias.filter((c) => {
+                      if (Number(c.tp_id) !== Number(tpId)) return false;
+                      const key = `${normalizeText(c.nombre)}::${normalizeText(c.descripcion)}`;
+                      return !materiaKeys.has(key);
+                    });
+
                   return items.map((item) => {
                     if (item.type === "entrega") {
                       const entrega = item.data as EntregaTP;
+                      const tpId = entrega.tp_id ?? entrega.tp?.id;
+                      const tpCompetencias = tpId ? competenciasByTp(tpId) : [];
                       return (
                         <Card key={`entrega-${entrega.id}`}>
                           <CardHeader>
@@ -552,7 +623,7 @@ export default function MateriaDetailPage() {
                                   {entrega.tp?.fecha_entrega
                                     ? format(
                                         new Date(entrega.tp.fecha_entrega),
-                                        "dd/MM/yyyy"
+                                        "dd/MM/yyyy",
                                       )
                                     : "Sin fecha"}
                                 </CardDescription>
@@ -571,8 +642,31 @@ export default function MateriaDetailPage() {
                               )}
                             </div>
                           </CardHeader>
-                          {entrega.devolucion && (
-                            <CardContent>
+                          <CardContent className="space-y-3">
+                            {tpCompetencias.length > 0 && (
+                              <div className="space-y-2">
+                                <p className="text-sm font-medium">
+                                  Competencias del TP
+                                </p>
+                                <div className="space-y-2">
+                                  {tpCompetencias.map((competencia: any) => (
+                                    <div
+                                      key={competencia.id}
+                                      className="border rounded-lg p-3"
+                                    >
+                                      <p className="text-sm font-medium">
+                                        {competencia.nombre}
+                                      </p>
+                                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                        {competencia.descripcion ||
+                                          "Sin descripción"}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {entrega.devolucion && (
                               <div className="p-3 bg-muted rounded-lg">
                                 <p className="text-sm font-medium mb-1">
                                   Devolución:
@@ -581,12 +675,13 @@ export default function MateriaDetailPage() {
                                   {entrega.devolucion}
                                 </p>
                               </div>
-                            </CardContent>
-                          )}
+                            )}
+                          </CardContent>
                         </Card>
                       );
                     } else {
                       const tp = item.data as TP;
+                      const tpCompetencias = competenciasByTp(tp.id);
                       return (
                         <Card key={`tp-${tp.id}`}>
                           <CardHeader>
@@ -600,7 +695,7 @@ export default function MateriaDetailPage() {
                                   {tp.fecha_entrega
                                     ? format(
                                         new Date(tp.fecha_entrega),
-                                        "dd/MM/yyyy"
+                                        "dd/MM/yyyy",
                                       )
                                     : "Sin fecha"}
                                 </CardDescription>
@@ -627,6 +722,31 @@ export default function MateriaDetailPage() {
                               </div>
                             </div>
                           </CardHeader>
+                          <CardContent className="space-y-3">
+                            {tpCompetencias.length > 0 && (
+                              <div className="space-y-2">
+                                <p className="text-sm font-medium">
+                                  Competencias del TP
+                                </p>
+                                <div className="space-y-2">
+                                  {tpCompetencias.map((competencia: any) => (
+                                    <div
+                                      key={competencia.id}
+                                      className="border rounded-lg p-3"
+                                    >
+                                      <p className="text-sm font-medium">
+                                        {competencia.nombre}
+                                      </p>
+                                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                        {competencia.descripcion ||
+                                          "Sin descripción"}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
                         </Card>
                       );
                     }
@@ -656,16 +776,22 @@ export default function MateriaDetailPage() {
                           <CardTitle className="text-base">
                             Evaluación
                           </CardTitle>
-                          <CardDescription className="flex items-center gap-2 mt-1" suppressHydrationWarning>
+                          <CardDescription
+                            className="flex items-center gap-2 mt-1"
+                            suppressHydrationWarning
+                          >
                             <Calendar className="h-3 w-3" />
                             {format(
-                              new Date(entregaEvaluacion.evaluacion.fecha_evaluacion),
+                              new Date(
+                                entregaEvaluacion.evaluacion.fecha_evaluacion,
+                              ),
                               "EEEE dd 'de' MMMM, yyyy",
-                              { locale: es }
+                              { locale: es },
                             )}
                           </CardDescription>
                         </div>
-                        {entregaEvaluacion.nota !== null && entregaEvaluacion.nota !== undefined ? (
+                        {entregaEvaluacion.nota !== null &&
+                        entregaEvaluacion.nota !== undefined ? (
                           <Badge className="bg-green-500 hover:bg-green-600">
                             Nota: {entregaEvaluacion.nota}
                           </Badge>
@@ -683,13 +809,18 @@ export default function MateriaDetailPage() {
                       </div>
 
                       {entregaEvaluacion.evaluacion.fecha_devolucion && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground" suppressHydrationWarning>
+                        <div
+                          className="flex items-center gap-2 text-sm text-muted-foreground"
+                          suppressHydrationWarning
+                        >
                           <Calendar className="h-4 w-4" />
                           <span>
                             Devolución:{" "}
                             {format(
-                              new Date(entregaEvaluacion.evaluacion.fecha_devolucion),
-                              "dd/MM/yyyy"
+                              new Date(
+                                entregaEvaluacion.evaluacion.fecha_devolucion,
+                              ),
+                              "dd/MM/yyyy",
                             )}
                           </span>
                         </div>
@@ -735,8 +866,7 @@ function FeedbackForm({ cursadaId }: { cursadaId: string }) {
       if (stored) {
         setValue(stored);
       }
-    } catch (e) {
-    }
+    } catch (e) {}
   }, [storageKey]);
 
   const handleSave = () => {
@@ -744,8 +874,7 @@ function FeedbackForm({ cursadaId }: { cursadaId: string }) {
       localStorage.setItem(storageKey, value);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (e) {
-    }
+    } catch (e) {}
   };
 
   return (

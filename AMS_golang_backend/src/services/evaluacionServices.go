@@ -25,26 +25,21 @@ func (s *EvaluacionService) GetAllEvaluaciones() ([]models.EvaluacionModel, erro
 	return evaluaciones, nil
 }
 
-// GetEvaluacionesByProfesorID returns only evaluaciones for comisiones assigned to the given profesor
 func (s *EvaluacionService) GetEvaluacionesByProfesorID(profesorID int) ([]models.EvaluacionModel, error) {
-	// First get all comision IDs for this profesor
 	var profesorComisiones []models.ProfesorXComision
 	if err := s.db.Where("profesor_id = ?", profesorID).Find(&profesorComisiones).Error; err != nil {
 		return nil, err
 	}
 
-	// Extract comision IDs
 	comisionIDs := make([]int, len(profesorComisiones))
 	for i, pc := range profesorComisiones {
 		comisionIDs[i] = pc.ComisionId
 	}
 
-	// If no comisiones, return empty list
 	if len(comisionIDs) == 0 {
 		return []models.EvaluacionModel{}, nil
 	}
 
-	// Get evaluaciones for these comisiones
 	var evaluaciones []models.EvaluacionModel
 	result := s.db.Preload("Comision").Preload("Comision.Materia").Where("comision_id IN ?", comisionIDs).Find(&evaluaciones)
 	if result.Error != nil {
@@ -147,7 +142,6 @@ func (s *EvaluacionService) GetEntregasEvaluacionesByAlumnoID(alumnoID int) ([]m
 	return entregas, nil
 }
 
-// GetEntregasEvaluacionesByEvaluacionID returns all evaluation submissions for a specific evaluation
 func (s *EvaluacionService) GetEntregasEvaluacionesByEvaluacionID(evaluacionID int) ([]models.EntregaEvaluacion, error) {
 	var entregas []models.EntregaEvaluacion
 	result := s.db.Preload("Evaluacion").Preload("Evaluacion.Comision").Preload("Evaluacion.Comision.Materia").Preload("Alumno").
@@ -158,7 +152,6 @@ func (s *EvaluacionService) GetEntregasEvaluacionesByEvaluacionID(evaluacionID i
 	return entregas, nil
 }
 
-// GetEntregaEvaluacionByEvaluacionAndAlumno returns a specific evaluation submission for a student
 func (s *EvaluacionService) GetEntregaEvaluacionByEvaluacionAndAlumno(evaluacionID, alumnoID int) (*models.EntregaEvaluacion, error) {
 	var entrega models.EntregaEvaluacion
 	result := s.db.Preload("Evaluacion").Preload("Evaluacion.Comision").Preload("Evaluacion.Comision.Materia").Preload("Alumno").
@@ -169,7 +162,6 @@ func (s *EvaluacionService) GetEntregaEvaluacionByEvaluacionAndAlumno(evaluacion
 	return &entrega, nil
 }
 
-// UpdateEntregaEvaluacion updates the grading fields for a student's evaluation submission
 func (s *EvaluacionService) UpdateEntregaEvaluacion(evaluacionID, alumnoID int, updateRequest *models.EntregaEvaluacionUpdateRequest) (*models.EntregaEvaluacion, error) {
 	var entrega models.EntregaEvaluacion
 	result := s.db.Where("evaluacion_id = ? AND alumno_id = ?", evaluacionID, alumnoID).First(&entrega)
@@ -177,7 +169,6 @@ func (s *EvaluacionService) UpdateEntregaEvaluacion(evaluacionID, alumnoID int, 
 		return nil, result.Error
 	}
 
-	// Track if this is a grading update
 	isGrading := updateRequest.Nota != nil && entrega.Nota == nil
 
 	if updateRequest.Nota != nil {
@@ -194,10 +185,8 @@ func (s *EvaluacionService) UpdateEntregaEvaluacion(evaluacionID, alumnoID int, 
 		return nil, err
 	}
 
-	// Reload with relationships
 	s.db.Preload("Evaluacion").Preload("Evaluacion.Comision").Preload("Evaluacion.Comision.Materia").Preload("Alumno").First(&entrega, entrega.ID)
 
-	// Create notification if evaluation was graded
 	if isGrading && entrega.Nota != nil {
 		materiaNombre := "Evaluación"
 		if entrega.Evaluacion.Comision.Materia.Nombre != "" {
@@ -216,23 +205,18 @@ func (s *EvaluacionService) UpdateEntregaEvaluacion(evaluacionID, alumnoID int, 
 	return &entrega, nil
 }
 
-// SyncEntregasEvaluaciones creates missing EntregaEvaluacion entries for all evaluations
 func (s *EvaluacionService) SyncEntregasEvaluaciones() error {
-	// Get all evaluaciones
 	var evaluaciones []models.EvaluacionModel
 	if err := s.db.Find(&evaluaciones).Error; err != nil {
 		return err
 	}
 
-	// For each evaluacion, create EntregaEvaluacion for all students in the comision
 	for _, evaluacion := range evaluaciones {
-		// Get all students in this comision
 		var cursadas []models.Cursada
 		if err := s.db.Where("comision_id = ?", evaluacion.ComisionId).Find(&cursadas).Error; err != nil {
 			return err
 		}
 
-		// For each student, check if EntregaEvaluacion exists, if not create it
 		for _, cursada := range cursadas {
 			var count int64
 			s.db.Model(&models.EntregaEvaluacion{}).Where("evaluacion_id = ? AND alumno_id = ?", evaluacion.ID, cursada.AlumnoID).Count(&count)

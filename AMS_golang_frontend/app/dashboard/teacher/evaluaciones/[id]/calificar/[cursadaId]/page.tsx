@@ -1,99 +1,121 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useEffect, useState } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
-import { DashboardLayout } from "@/components/dashboard-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { evaluacionAPI, cursadaAPI } from "@/lib/api"
-import { ArrowLeft, Save, FileText, User, Calendar } from "lucide-react"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import Link from "next/link"
-import { useToast } from "@/hooks/use-toast"
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { DashboardLayout } from "@/components/dashboard-layout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { evaluacionAPI, cursadaAPI } from "@/lib/api";
+import { ArrowLeft, Save, FileText, User, Calendar } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
 
 export default function GradeEvaluacionPage() {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
-  const params = useParams()
-  const { toast } = useToast()
-  const evaluacionId = params.id as string
-  const cursadaId = params.cursadaId as string
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const params = useParams();
+  const { toast } = useToast();
+  const evaluacionId = params.id as string;
+  const cursadaId = params.cursadaId as string;
 
-  const [evaluacion, setEvaluacion] = useState<any>(null)
-  const [cursada, setCursada] = useState<any>(null)
-  const [entregaEvaluacion, setEntregaEvaluacion] = useState<any>(null)
-  const [nota, setNota] = useState("")
-  const [feedback, setFeedback] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [evaluacion, setEvaluacion] = useState<any>(null);
+  const [cursada, setCursada] = useState<any>(null);
+  const [entregaEvaluacion, setEntregaEvaluacion] = useState<any>(null);
+  const [nota, setNota] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== "teacher" && user.role !== "profesor")) {
-      router.push("/")
+    if (
+      !isLoading &&
+      (!user || (user.role !== "teacher" && user.role !== "profesor"))
+    ) {
+      router.push("/");
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     if (user && evaluacionId && cursadaId) {
-      setNota("")
-      setFeedback("")
-      setLoading(true)
+      setNota("");
+      setFeedback("");
+      setLoading(true);
       Promise.all([
         evaluacionAPI.getById(evaluacionId),
-        cursadaAPI.getById(cursadaId)
+        cursadaAPI.getById(cursadaId),
       ])
         .then(async ([evalResponse, cursadaResponse]) => {
-          console.log('Evaluacion and Cursada:', { evalResponse, cursadaResponse })
-          const evalData = evalResponse.data || evalResponse
-          const cursadaData = cursadaResponse.data || cursadaResponse
-          
-          setEvaluacion(evalData)
-          setCursada(cursadaData)
+          console.log("Evaluacion and Cursada:", {
+            evalResponse,
+            cursadaResponse,
+          });
+          const evalData = evalResponse.data || evalResponse;
+          const cursadaData = cursadaResponse.data || cursadaResponse;
 
-          const alumnoId = cursadaData.alumno_id || cursadaData.alumno?.id
+          setEvaluacion(evalData);
+          setCursada(cursadaData);
+
+          const alumnoId = cursadaData.alumno_id || cursadaData.alumno?.id;
           if (alumnoId) {
             try {
-              const entregaResponse = await evaluacionAPI.getEntrega(evaluacionId, String(alumnoId))
-              const entregaData = entregaResponse.data || entregaResponse
-              setEntregaEvaluacion(entregaData)
-              if (entregaData?.nota !== null && entregaData?.nota !== undefined) {
-                setNota(entregaData.nota.toString())
+              const entregaResponse = await evaluacionAPI.getEntrega(
+                evaluacionId,
+                String(alumnoId),
+              );
+              const entregaData = entregaResponse.data || entregaResponse;
+              setEntregaEvaluacion(entregaData);
+              if (
+                entregaData?.nota !== null &&
+                entregaData?.nota !== undefined
+              ) {
+                setNota(entregaData.nota.toString());
               }
               if (entregaData?.devolucion) {
-                setFeedback(entregaData.devolucion)
+                setFeedback(entregaData.devolucion);
               }
             } catch (err) {
-              console.error('Error loading entrega evaluacion:', err)
-              setEntregaEvaluacion(null)
+              console.error("Error loading entrega evaluacion:", err);
+              setEntregaEvaluacion(null);
             }
           }
         })
-        .catch(err => {
-          console.error('Error loading data:', err)
+        .catch((err) => {
+          console.error("Error loading data:", err);
           toast({
             title: "Error",
             description: "No se pudo cargar la información",
-            variant: "destructive"
-          })
+            variant: "destructive",
+          });
         })
-        .finally(() => setLoading(false))
+        .finally(() => setLoading(false));
     }
-  }, [user, evaluacionId, cursadaId, toast])
+  }, [user, evaluacionId, cursadaId, toast]);
 
-  if (isLoading || !user || user.role !== "teacher" && user.role !== "profesor") {
+  if (
+    isLoading ||
+    !user ||
+    (user.role !== "teacher" && user.role !== "profesor")
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
-    )
+    );
   }
 
   if (!loading && (!evaluacion || !cursada)) {
@@ -102,57 +124,59 @@ export default function GradeEvaluacionPage() {
         <div className="text-center py-12">
           <p className="text-lg font-medium">Información no encontrada</p>
           <Link href={`/dashboard/teacher/evaluaciones/${evaluacionId}`}>
-            <Button className="mt-4" variant="outline">Volver a la Evaluación</Button>
+            <Button className="mt-4" variant="outline">
+              Volver a la Evaluación
+            </Button>
           </Link>
         </div>
       </DashboardLayout>
-    )
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
+    e.preventDefault();
+    setSaving(true);
 
     try {
-      const notaNum = parseFloat(nota)
-      
+      const notaNum = parseFloat(nota);
+
       if (isNaN(notaNum) || notaNum < 0 || notaNum > 10) {
         toast({
           title: "Error",
           description: "La nota debe ser un número entre 0 y 10",
-          variant: "destructive"
-        })
-        setSaving(false)
-        return
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
       }
 
-      const alumnoId = cursada?.alumno_id || cursada?.alumno?.id
+      const alumnoId = cursada?.alumno_id || cursada?.alumno?.id;
       if (!alumnoId) {
-        throw new Error("No se pudo identificar al alumno")
+        throw new Error("No se pudo identificar al alumno");
       }
 
       await evaluacionAPI.updateEntrega(evaluacionId, String(alumnoId), {
         nota: notaNum,
-        devolucion: feedback.trim() || undefined
-      })
+        devolucion: feedback.trim() || undefined,
+      });
 
       toast({
         title: "Calificación guardada",
-        description: "La calificación se guardó exitosamente"
-      })
+        description: "La calificación se guardó exitosamente",
+      });
 
-      router.push(`/dashboard/teacher/evaluaciones/${evaluacionId}`)
+      router.push(`/dashboard/teacher/evaluaciones/${evaluacionId}`);
     } catch (error: any) {
-      console.error('Error saving grade:', error)
+      console.error("Error saving grade:", error);
       toast({
         title: "Error",
         description: error.message || "No se pudo guardar la calificación",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   return (
     <DashboardLayout>
@@ -164,8 +188,12 @@ export default function GradeEvaluacionPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Calificar Evaluación</h1>
-            <p className="text-muted-foreground">Evalúa el desempeño del estudiante</p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Calificar Evaluación
+            </h1>
+            <p className="text-muted-foreground">
+              Evalúa el desempeño del estudiante
+            </p>
           </div>
         </div>
 
@@ -181,11 +209,12 @@ export default function GradeEvaluacionPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>Información</CardTitle>
-                  {entregaEvaluacion?.nota !== null && entregaEvaluacion?.nota !== undefined && (
-                    <Badge className="bg-green-500 hover:bg-green-600">
-                      Calificado: {entregaEvaluacion.nota}
-                    </Badge>
-                  )}
+                  {entregaEvaluacion?.nota !== null &&
+                    entregaEvaluacion?.nota !== undefined && (
+                      <Badge className="bg-green-500 hover:bg-green-600">
+                        Calificado: {entregaEvaluacion.nota}
+                      </Badge>
+                    )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -193,7 +222,9 @@ export default function GradeEvaluacionPage() {
                   <div className="flex items-center gap-3">
                     <User className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Estudiante</p>
+                      <p className="text-sm text-muted-foreground">
+                        Estudiante
+                      </p>
                       <p className="font-medium">
                         {cursada.alumno?.nombre} {cursada.alumno?.apellido}
                       </p>
@@ -205,25 +236,41 @@ export default function GradeEvaluacionPage() {
                   <div className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Fecha de evaluación</p>
+                      <p className="text-sm text-muted-foreground">
+                        Fecha de evaluación
+                      </p>
                       <p className="font-medium" suppressHydrationWarning>
-                        {format(new Date(evaluacion.fecha_evaluacion), "dd/MM/yyyy")}
+                        {format(
+                          new Date(evaluacion.fecha_evaluacion),
+                          "dd/MM/yyyy",
+                        )}
                       </p>
                     </div>
                   </div>
                 </div>
 
                 <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm font-medium mb-2">Temas de la Evaluación:</p>
+                  <p className="text-sm font-medium mb-2">
+                    Temas de la Evaluación:
+                  </p>
                   <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                     {evaluacion.temas}
                   </p>
                 </div>
 
                 {evaluacion.fecha_devolucion && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground" suppressHydrationWarning>
+                  <div
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                    suppressHydrationWarning
+                  >
                     <Calendar className="h-4 w-4" />
-                    <span>Fecha de devolución: {format(new Date(evaluacion.fecha_devolucion), "dd/MM/yyyy")}</span>
+                    <span>
+                      Fecha de devolución:{" "}
+                      {format(
+                        new Date(evaluacion.fecha_devolucion),
+                        "dd/MM/yyyy",
+                      )}
+                    </span>
                   </div>
                 )}
               </CardContent>
@@ -233,7 +280,9 @@ export default function GradeEvaluacionPage() {
               <CardHeader>
                 <CardTitle>Calificación</CardTitle>
                 <CardDescription>
-                  {cursada.nota_final ? "Actualizar calificación existente" : "Ingresar nota y devolución"}
+                  {cursada.nota_final
+                    ? "Actualizar calificación existente"
+                    : "Ingresar nota y devolución"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -253,7 +302,9 @@ export default function GradeEvaluacionPage() {
                       onChange={(e) => setNota(e.target.value)}
                       required
                     />
-                    <p className="text-xs text-muted-foreground">Nota entre 0 y 10</p>
+                    <p className="text-xs text-muted-foreground">
+                      Nota entre 0 y 10
+                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -268,17 +319,25 @@ export default function GradeEvaluacionPage() {
                   </div>
 
                   <div className="flex gap-3">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       className="flex-1"
-                      onClick={() => router.push(`/dashboard/teacher/evaluaciones/${evaluacionId}`)}
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/teacher/evaluaciones/${evaluacionId}`,
+                        )
+                      }
                     >
                       Cancelar
                     </Button>
                     <Button type="submit" className="flex-1" disabled={saving}>
                       <Save className="h-4 w-4 mr-2" />
-                      {saving ? "Guardando..." : cursada.nota_final ? "Actualizar Calificación" : "Guardar Calificación"}
+                      {saving
+                        ? "Guardando..."
+                        : cursada.nota_final
+                          ? "Actualizar Calificación"
+                          : "Guardar Calificación"}
                     </Button>
                   </div>
                 </form>
@@ -288,5 +347,5 @@ export default function GradeEvaluacionPage() {
         )}
       </div>
     </DashboardLayout>
-  )
+  );
 }

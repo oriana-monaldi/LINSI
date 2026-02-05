@@ -95,7 +95,7 @@ export const entregaTPAPI = {
       nota?: number;
       devolucion?: string;
       estado?: string;
-    }
+    },
   ) =>
     fetchAPI(`/entregas/${id}`, {
       method: "PATCH",
@@ -123,7 +123,6 @@ export const entregaAPI = {
       if (!res.ok) throw new Error("Upload failed");
       return res.json();
     }),
-    
 };
 
 // Notificaciones
@@ -152,7 +151,7 @@ export const comisionAPI = {
     }),
   update: (
     id: string,
-    data: { nombre?: string; horarios?: string; materia_id?: number }
+    data: { nombre?: string; horarios?: string; materia_id?: number },
   ) =>
     fetchAPI(`/comisiones/${id}`, {
       method: "PATCH",
@@ -161,7 +160,7 @@ export const comisionAPI = {
   delete: (id: string) => fetchAPI(`/comisiones/${id}`, { method: "DELETE" }),
 };
 
-// ProfesorXComision 
+// ProfesorXComision
 export const profesorXComisionAPI = {
   getAll: () => fetchAPI("/profesor-comision/"),
   getById: (id: string) => fetchAPI(`/profesor-comision/${id}`),
@@ -184,7 +183,7 @@ export const profesorXComisionAPI = {
       profesor_id?: number;
       comision_id?: number;
       cargo?: "Titular" | "Adjunto" | "JTP";
-    }
+    },
   ) =>
     fetchAPI(`/profesor-comision/${id}`, {
       method: "PATCH",
@@ -212,7 +211,7 @@ export const cursadaAPI = {
     }),
   update: (
     id: string,
-    data: { nota_final?: number; nota_conceptual?: number; feedback?: string }
+    data: { nota_final?: number; nota_conceptual?: number; feedback?: string },
   ) =>
     fetchAPI(`/cursadas/${id}`, {
       method: "PATCH",
@@ -261,13 +260,32 @@ export const alumnoAPI = {
       email?: string;
       password?: string;
       legajo?: string;
-    }
+    },
   ) =>
     fetchAPI(`/alumnos/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
   delete: (id: string) => fetchAPI(`/alumnos/${id}`, { method: "DELETE" }),
+};
+
+export const materiaCompetenciaAPI = {
+  getAll: () => fetchAPI("/materia-competencias/"),
+  getById: (id: string) => fetchAPI(`/materia-competencias/${id}`),
+  getByMateria: (materiaId: string) =>
+    fetchAPI(`/materia-competencias/materia/${materiaId}`),
+  create: (materiaId: string, data: { nombre: string; descripcion?: string }) =>
+    fetchAPI(`/materia-competencias/materia/${materiaId}`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: any) =>
+    fetchAPI(`/materia-competencias/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    fetchAPI(`/materia-competencias/${id}`, { method: "DELETE" }),
 };
 
 // Profesores
@@ -293,7 +311,7 @@ export const profesorAPI = {
       email?: string;
       password?: string;
       legajo?: string;
-    }
+    },
   ) =>
     fetchAPI(`/profesores/${id}`, {
       method: "PATCH",
@@ -323,7 +341,7 @@ export const adminAPI = {
       apellido?: string;
       email?: string;
       password?: string;
-    }
+    },
   ) =>
     fetchAPI(`/admins/${id}`, {
       method: "PATCH",
@@ -342,7 +360,10 @@ export const competenciaAPI = {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  createForComision: (comisionId: string, data: { nombre: string; descripcion: string }) =>
+  createForComision: (
+    comisionId: string,
+    data: { nombre: string; descripcion: string },
+  ) =>
     fetchAPI(`/competencias/comision/${comisionId}`, {
       method: "POST",
       body: JSON.stringify(data),

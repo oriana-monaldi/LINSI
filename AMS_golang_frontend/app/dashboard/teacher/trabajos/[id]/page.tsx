@@ -1,70 +1,110 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
-import { DashboardLayout } from "@/components/dashboard-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { tpAPI, entregaTPAPI } from "@/lib/api"
-import { ArrowLeft, FileText, Calendar, Users, CheckCircle2, Clock, AlertCircle, Pencil } from "lucide-react"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import Link from "next/link"
-import { useToast } from "@/hooks/use-toast"
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { DashboardLayout } from "@/components/dashboard-layout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { tpAPI, entregaTPAPI, competenciaAPI } from "@/lib/api";
+import {
+  ArrowLeft,
+  FileText,
+  Calendar,
+  Users,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  Pencil,
+} from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
 
 export default function TPDetailPage() {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
-  const params = useParams()
-  const { toast } = useToast()
-  const tpId = params.id as string
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const params = useParams();
+  const { toast } = useToast();
+  const tpId = params.id as string;
 
-  const [tp, setTp] = useState<any>(null)
-  const [entregas, setEntregas] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [tp, setTp] = useState<any>(null);
+  const [entregas, setEntregas] = useState<any[]>([]);
+  const [competencias, setCompetencias] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== "teacher" && user.role !== "profesor")) {
-      router.push("/")
+    if (
+      !isLoading &&
+      (!user || (user.role !== "teacher" && user.role !== "profesor"))
+    ) {
+      router.push("/");
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     if (user && tpId) {
-      setLoading(true)
+      setLoading(true);
       Promise.all([
         tpAPI.getById(tpId),
         entregaTPAPI.getByTP(tpId),
+        competenciaAPI.getAll().catch(() => []),
       ])
-        .then(([tpResponse, entregasResponse]) => {
-          console.log('TP and Entregas:', { tpResponse, entregasResponse })
+        .then(([tpResponse, entregasResponse, competenciasResponse]) => {
+          console.log("TP and Entregas:", {
+            tpResponse,
+            entregasResponse,
+            competenciasResponse,
+          });
 
-          const tpData = tpResponse.data || tpResponse
-          const entregasData = entregasResponse.data || entregasResponse.entregas || entregasResponse || []
+          const tpData = tpResponse.data || tpResponse;
+          const entregasData =
+            entregasResponse.data ||
+            entregasResponse.entregas ||
+            entregasResponse ||
+            [];
+          const competenciasData =
+            competenciasResponse.data || competenciasResponse || [];
+          const tpCompetencias = Array.isArray(competenciasData)
+            ? competenciasData.filter(
+                (c: any) => Number(c.tp_id) === Number(tpData?.id),
+              )
+            : [];
 
-          setTp(tpData)
-          setEntregas(Array.isArray(entregasData) ? entregasData : [])
+          setTp(tpData);
+          setEntregas(Array.isArray(entregasData) ? entregasData : []);
+          setCompetencias(tpCompetencias);
         })
-        .catch(err => {
-          console.error('Error loading TP details:', err)
+        .catch((err) => {
+          console.error("Error loading TP details:", err);
           toast({
             title: "Error",
             description: "No se pudo cargar la información del TP",
-            variant: "destructive"
-          })
+            variant: "destructive",
+          });
         })
-        .finally(() => setLoading(false))
+        .finally(() => setLoading(false));
     }
-  }, [user, tpId, toast])
+  }, [user, tpId, toast]);
 
-  if (isLoading || !user || user.role !== "teacher" && user.role !== "profesor") {
+  if (
+    isLoading ||
+    !user ||
+    (user.role !== "teacher" && user.role !== "profesor")
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
-    )
+    );
   }
 
   if (!loading && !tp) {
@@ -74,15 +114,22 @@ export default function TPDetailPage() {
           <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-lg font-medium">Trabajo Práctico no encontrado</p>
           <Link href="/dashboard/teacher/trabajos">
-            <Button className="mt-4" variant="outline">Volver a Trabajos</Button>
+            <Button className="mt-4" variant="outline">
+              Volver a Trabajos
+            </Button>
           </Link>
         </div>
       </DashboardLayout>
-    )
+    );
   }
 
-  const pendingCount = entregas.filter(e => !e.nota).length
-  const gradedCount = entregas.filter(e => e.nota).length
+  const pendingCount = entregas.filter((e) => !e.nota).length;
+  const gradedCount = entregas.filter((e) => e.nota).length;
+  const toLocalDate = (value?: string) => {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  };
 
   return (
     <DashboardLayout>
@@ -130,24 +177,58 @@ export default function TPDetailPage() {
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <p className="text-sm text-muted-foreground">Fecha de entrega</p>
+                    <p className="text-sm text-muted-foreground">
+                      Fecha de entrega
+                    </p>
                     <p className="font-medium">
-                      {tp && tp.fecha_entrega && format(new Date(tp.fecha_entrega), "EEEE dd 'de' MMMM, yyyy", { locale: es })}
+                      {tp &&
+                        tp.fecha_entrega &&
+                        format(
+                          toLocalDate(tp.fecha_entrega) ??
+                            new Date(tp.fecha_entrega),
+                          "EEEE dd 'de' MMMM, yyyy HH:mm",
+                          { locale: es },
+                        )}
                     </p>
                   </div>
                 </div>
 
                 <div className="p-4 bg-muted rounded-lg">
                   <p className="text-sm font-medium mb-2">Consigna:</p>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{tp?.consigna}</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {tp?.consigna}
+                  </p>
                 </div>
+
+                {competencias.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Competencias del TP</p>
+                    <div className="space-y-2">
+                      {competencias.map((competencia: any) => (
+                        <div
+                          key={competencia.id}
+                          className="border rounded-lg p-3"
+                        >
+                          <p className="text-sm font-medium">
+                            {competencia.nombre}
+                          </p>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                            {competencia.descripcion || "Sin descripción"}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Entregas</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Entregas
+                  </CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -157,7 +238,9 @@ export default function TPDetailPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Por Calificar</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Por Calificar
+                  </CardTitle>
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -167,7 +250,9 @@ export default function TPDetailPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Calificadas</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Calificadas
+                  </CardTitle>
                   <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -197,7 +282,8 @@ export default function TPDetailPage() {
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center gap-3">
                             <p className="font-medium">
-                              {entrega.alumno?.nombre} {entrega.alumno?.apellido}
+                              {entrega.alumno?.nombre}{" "}
+                              {entrega.alumno?.apellido}
                             </p>
                             {entrega.nota ? (
                               <Badge className="bg-green-500 hover:bg-green-600">
@@ -208,7 +294,19 @@ export default function TPDetailPage() {
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Entregado: {format(new Date(entrega.fecha_entrega), "dd/MM/yyyy HH:mm")}
+                            Entregado:{" "}
+                            {(() => {
+                              const entregaDate = toLocalDate(
+                                entrega.fecha_entrega,
+                              );
+                              return entregaDate
+                                ? new Intl.DateTimeFormat("es-AR", {
+                                    dateStyle: "short",
+                                    timeStyle: "short",
+                                    timeZone: "America/Argentina/Buenos_Aires",
+                                  }).format(entregaDate)
+                                : "Sin fecha";
+                            })()}
                           </p>
                           {entrega.archivo_url && (
                             <p className="text-xs text-muted-foreground">
@@ -216,7 +314,9 @@ export default function TPDetailPage() {
                             </p>
                           )}
                         </div>
-                        <Link href={`/dashboard/teacher/trabajos/${tpId}/entregas/${entrega.id}`}>
+                        <Link
+                          href={`/dashboard/teacher/trabajos/${tpId}/entregas/${entrega.id}`}
+                        >
                           <Button size="sm">
                             {entrega.nota ? "Ver Detalles" : "Calificar"}
                           </Button>
@@ -239,5 +339,5 @@ export default function TPDetailPage() {
         )}
       </div>
     </DashboardLayout>
-  )
+  );
 }

@@ -1,84 +1,114 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
-import { DashboardLayout } from "@/components/dashboard-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { evaluacionAPI, cursadaAPI } from "@/lib/api"
-import { ArrowLeft, FileText, Calendar, Users, CheckCircle2, Clock, AlertCircle, Pencil } from "lucide-react"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import Link from "next/link"
-import { useToast } from "@/hooks/use-toast"
+import { useEffect, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { DashboardLayout } from "@/components/dashboard-layout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { evaluacionAPI, cursadaAPI } from "@/lib/api";
+import {
+  ArrowLeft,
+  FileText,
+  Calendar,
+  Users,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  Pencil,
+} from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EvaluacionDetailPage() {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
-  const params = useParams()
-  const { toast } = useToast()
-  const evaluacionId = params.id as string
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const params = useParams();
+  const { toast } = useToast();
+  const evaluacionId = params.id as string;
 
-  const [evaluacion, setEvaluacion] = useState<any>(null)
-  const [cursadas, setCursadas] = useState<any[]>([])
-  const [entregasEvaluacion, setEntregasEvaluacion] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [evaluacion, setEvaluacion] = useState<any>(null);
+  const [cursadas, setCursadas] = useState<any[]>([]);
+  const [entregasEvaluacion, setEntregasEvaluacion] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== "teacher" && user.role !== "profesor")) {
-      router.push("/")
+    if (
+      !isLoading &&
+      (!user || (user.role !== "teacher" && user.role !== "profesor"))
+    ) {
+      router.push("/");
     }
-  }, [user, isLoading, router])
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     if (user && evaluacionId) {
-      setLoading(true)
-      evaluacionAPI.getById(evaluacionId)
+      setLoading(true);
+      evaluacionAPI
+        .getById(evaluacionId)
         .then(async (evalResponse) => {
-          console.log('Evaluacion:', evalResponse)
-          const evalData = evalResponse.data || evalResponse
-          setEvaluacion(evalData)
+          console.log("Evaluacion:", evalResponse);
+          const evalData = evalResponse.data || evalResponse;
+          setEvaluacion(evalData);
 
           try {
-            const entregasResponse = await evaluacionAPI.getEntregas(evaluacionId)
-            const entregasData = entregasResponse.data || entregasResponse || []
-            setEntregasEvaluacion(Array.isArray(entregasData) ? entregasData : [])
+            const entregasResponse =
+              await evaluacionAPI.getEntregas(evaluacionId);
+            const entregasData =
+              entregasResponse.data || entregasResponse || [];
+            setEntregasEvaluacion(
+              Array.isArray(entregasData) ? entregasData : [],
+            );
           } catch (err) {
-            console.error('Error loading entregas evaluacion:', err)
-            setEntregasEvaluacion([])
+            console.error("Error loading entregas evaluacion:", err);
+            setEntregasEvaluacion([]);
           }
 
           if (evalData.comision_id) {
             try {
-              const cursadasResponse = await cursadaAPI.getByComision(evalData.comision_id.toString())
-              const cursadasData = cursadasResponse.data || cursadasResponse || []
-              setCursadas(Array.isArray(cursadasData) ? cursadasData : [])
+              const cursadasResponse = await cursadaAPI.getByComision(
+                evalData.comision_id.toString(),
+              );
+              const cursadasData =
+                cursadasResponse.data || cursadasResponse || [];
+              setCursadas(Array.isArray(cursadasData) ? cursadasData : []);
             } catch (err) {
-              console.error('Error loading cursadas:', err)
-              setCursadas([])
+              console.error("Error loading cursadas:", err);
+              setCursadas([]);
             }
           }
         })
-        .catch(err => {
-          console.error('Error loading evaluacion details:', err)
+        .catch((err) => {
+          console.error("Error loading evaluacion details:", err);
           toast({
             title: "Error",
             description: "No se pudo cargar la información de la evaluación",
-            variant: "destructive"
-          })
+            variant: "destructive",
+          });
         })
-        .finally(() => setLoading(false))
+        .finally(() => setLoading(false));
     }
-  }, [user, evaluacionId, toast])
+  }, [user, evaluacionId, toast]);
 
-  if (isLoading || !user || user.role !== "teacher" && user.role !== "profesor") {
+  if (
+    isLoading ||
+    !user ||
+    (user.role !== "teacher" && user.role !== "profesor")
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
-    )
+    );
   }
 
   if (!loading && !evaluacion) {
@@ -88,17 +118,23 @@ export default function EvaluacionDetailPage() {
           <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-lg font-medium">Evaluación no encontrada</p>
           <Link href="/dashboard/teacher/evaluaciones">
-            <Button className="mt-4" variant="outline">Volver a Evaluaciones</Button>
+            <Button className="mt-4" variant="outline">
+              Volver a Evaluaciones
+            </Button>
           </Link>
         </div>
       </DashboardLayout>
-    )
+    );
   }
 
-  const entregasByAlumno = new Map(entregasEvaluacion.map((e) => [e.alumno_id, e]))
-  const totalCount = cursadas.length
-  const gradedCount = entregasEvaluacion.filter((e) => e.nota !== null && e.nota !== undefined).length
-  const pendingCount = totalCount - gradedCount
+  const entregasByAlumno = new Map(
+    entregasEvaluacion.map((e) => [e.alumno_id, e]),
+  );
+  const totalCount = cursadas.length;
+  const gradedCount = entregasEvaluacion.filter(
+    (e) => e.nota !== null && e.nota !== undefined,
+  ).length;
+  const pendingCount = totalCount - gradedCount;
 
   return (
     <DashboardLayout>
@@ -112,7 +148,8 @@ export default function EvaluacionDetailPage() {
           <div className="flex-1">
             <h1 className="text-3xl font-bold tracking-tight">Evaluación</h1>
             <p className="text-muted-foreground">
-              {evaluacion?.comision?.nombre || `Comisión ${evaluacion?.comision_id}`}
+              {evaluacion?.comision?.nombre ||
+                `Comisión ${evaluacion?.comision_id}`}
             </p>
           </div>
           <Link href={`/dashboard/teacher/evaluaciones/${evaluacionId}/editar`}>
@@ -143,18 +180,34 @@ export default function EvaluacionDetailPage() {
                   <div className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Fecha de evaluación</p>
+                      <p className="text-sm text-muted-foreground">
+                        Fecha de evaluación
+                      </p>
                       <p className="font-medium" suppressHydrationWarning>
-                        {evaluacion && evaluacion.fecha_evaluacion && format(new Date(evaluacion.fecha_evaluacion), "EEEE dd 'de' MMMM, yyyy", { locale: es })}
+                        {evaluacion &&
+                          evaluacion.fecha_evaluacion &&
+                          format(
+                            new Date(evaluacion.fecha_evaluacion),
+                            "EEEE dd 'de' MMMM, yyyy",
+                            { locale: es },
+                          )}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Calendar className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Fecha de devolución</p>
+                      <p className="text-sm text-muted-foreground">
+                        Fecha de devolución
+                      </p>
                       <p className="font-medium" suppressHydrationWarning>
-                        {evaluacion && evaluacion.fecha_devolucion && format(new Date(evaluacion.fecha_devolucion), "dd/MM/yyyy", { locale: es })}
+                        {evaluacion &&
+                          evaluacion.fecha_devolucion &&
+                          format(
+                            new Date(evaluacion.fecha_devolucion),
+                            "dd/MM/yyyy",
+                            { locale: es },
+                          )}
                       </p>
                     </div>
                   </div>
@@ -162,7 +215,9 @@ export default function EvaluacionDetailPage() {
 
                 <div className="p-4 bg-muted rounded-lg">
                   <p className="text-sm font-medium mb-2">Temas:</p>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{evaluacion?.temas}</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {evaluacion?.temas}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -170,7 +225,9 @@ export default function EvaluacionDetailPage() {
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Estudiantes</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Estudiantes
+                  </CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -180,7 +237,9 @@ export default function EvaluacionDetailPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Por Calificar</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Por Calificar
+                  </CardTitle>
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -190,7 +249,9 @@ export default function EvaluacionDetailPage() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Calificados</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Calificados
+                  </CardTitle>
                   <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -220,12 +281,16 @@ export default function EvaluacionDetailPage() {
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center gap-3">
                             <p className="font-medium">
-                              {cursada.alumno?.nombre} {cursada.alumno?.apellido}
+                              {cursada.alumno?.nombre}{" "}
+                              {cursada.alumno?.apellido}
                             </p>
-                            {entregasByAlumno.get(cursada.alumno_id)?.nota !== null &&
-                            entregasByAlumno.get(cursada.alumno_id)?.nota !== undefined ? (
+                            {entregasByAlumno.get(cursada.alumno_id)?.nota !==
+                              null &&
+                            entregasByAlumno.get(cursada.alumno_id)?.nota !==
+                              undefined ? (
                               <Badge className="bg-green-500 hover:bg-green-600">
-                                Calificado: {entregasByAlumno.get(cursada.alumno_id)?.nota}
+                                Calificado:{" "}
+                                {entregasByAlumno.get(cursada.alumno_id)?.nota}
                               </Badge>
                             ) : (
                               <Badge variant="secondary">Pendiente</Badge>
@@ -235,10 +300,14 @@ export default function EvaluacionDetailPage() {
                             Legajo: {cursada.alumno?.legajo}
                           </p>
                         </div>
-                        <Link href={`/dashboard/teacher/evaluaciones/${evaluacionId}/calificar/${cursada.id}`}>
+                        <Link
+                          href={`/dashboard/teacher/evaluaciones/${evaluacionId}/calificar/${cursada.id}`}
+                        >
                           <Button size="sm">
-                            {entregasByAlumno.get(cursada.alumno_id)?.nota !== null &&
-                            entregasByAlumno.get(cursada.alumno_id)?.nota !== undefined
+                            {entregasByAlumno.get(cursada.alumno_id)?.nota !==
+                              null &&
+                            entregasByAlumno.get(cursada.alumno_id)?.nota !==
+                              undefined
                               ? "Ver Detalles"
                               : "Calificar"}
                           </Button>
@@ -249,7 +318,9 @@ export default function EvaluacionDetailPage() {
                 ) : (
                   <div className="text-center py-12">
                     <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-lg font-medium">No hay estudiantes inscriptos</p>
+                    <p className="text-lg font-medium">
+                      No hay estudiantes inscriptos
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       No hay estudiantes inscriptos en esta comisión.
                     </p>
@@ -261,5 +332,5 @@ export default function EvaluacionDetailPage() {
         )}
       </div>
     </DashboardLayout>
-  )
+  );
 }

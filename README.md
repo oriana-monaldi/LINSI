@@ -50,14 +50,15 @@ El sistema permite pasar de un modelo estático de registro de notas a uno **din
 
 Desde la carpeta del frontend:
 
+
+```bash
 npm install
 npm run dev
+
 
 ▶ Backend (Golang)
 
 Desde la carpeta del backend:
-docker compose up --build
-
 
 
 ```bash

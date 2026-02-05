@@ -37,28 +37,23 @@ El sistema permite pasar de un modelo estático de registro de notas a uno **din
 
 ## 🚀 Cómo levantar el proyecto
 
-### 🔹 Requisitos
+### Requisitos
 
-- Node.js (v18 o superior recomendado)  
+- Node.js  
 - npm  
 - Docker  
 - Docker Compose  
 
 ---
 
-▶ Frontend (Next.js)
+### ▶ Frontend (Next.js)
 
 Desde la carpeta del frontend:
-
 
 ```bash
 npm install
 npm run dev
 
-
-▶ Backend (Golang)
-
-Desde la carpeta del backend:
 
 
 ```bash
